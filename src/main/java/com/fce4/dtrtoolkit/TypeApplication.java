@@ -1,11 +1,11 @@
-package com.fce4.typeapi;
+package com.fce4.dtrtoolkit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TypeapiApplication {
+public class TypeApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(TypeapiApplication.class, args);
+		SpringApplication.run(TypeApplication.class, args);
 	}
 
 }

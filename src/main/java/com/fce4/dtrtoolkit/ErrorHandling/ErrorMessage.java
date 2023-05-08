@@ -1,4 +1,4 @@
-package com.fce4.typeapi.ErrorHandling;
+package com.fce4.dtrtoolkit.ErrorHandling;
 
 import java.util.Date;
 

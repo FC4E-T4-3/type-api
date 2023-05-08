@@ -1,4 +1,4 @@
-package com.fce4.typeapi;
+package com.fce4.dtrtoolkit;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

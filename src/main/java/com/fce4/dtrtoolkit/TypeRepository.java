@@ -1,4 +1,4 @@
-package com.fce4.typeapi;
+package com.fce4.dtrtoolkit;
 
 import java.util.ArrayList;
 import java.util.HashMap;

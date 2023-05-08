@@ -1,4 +1,4 @@
-package com.fce4.typeapi;
+package com.fce4.dtrtoolkit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
