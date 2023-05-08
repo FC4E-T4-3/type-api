@@ -9,13 +9,15 @@ public class TypeEntity {
     private String prefix;
     private String type;
     private JsonNode content;
+    private boolean validate;
 
-    public TypeEntity(String pid, String prefix, String type, JsonNode content)
+    public TypeEntity(String pid, String prefix, String type, JsonNode content, boolean validate)
     {
         this.pid = pid;
         this.prefix = prefix;
         this.type = type;
         this.content = content;
+        this.validate = validate;
     }
 
     public TypeEntity(JsonNode node)
@@ -24,6 +26,16 @@ public class TypeEntity {
         this.prefix = pid.split("/")[0];
         this.type = node.get("type").textValue();
         this.content = node.get("content");
+        this.validate = true;
+    }
+
+    public TypeEntity(JsonNode node, boolean validate)
+    {
+        this.pid = node.get("id").textValue();
+        this.prefix = pid.split("/")[0];
+        this.type = node.get("type").textValue();
+        this.content = node.get("content");
+        this.validate = validate;
     }
 
     public String getPid(){
@@ -40,6 +52,10 @@ public class TypeEntity {
 
     public JsonNode getContent(){
         return this.content;
+    }
+
+    public boolean getValidate(){
+        return this.validate;
     }
 
     /**

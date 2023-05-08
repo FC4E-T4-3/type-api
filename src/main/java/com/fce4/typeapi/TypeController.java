@@ -30,7 +30,7 @@ public class TypeController {
     TypeService typeService;
 
 
-    @RequestMapping(value = "/api/v1/desc/**", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/desc/**", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.

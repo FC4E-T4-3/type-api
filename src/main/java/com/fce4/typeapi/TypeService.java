@@ -105,9 +105,14 @@ public class TypeService {
             throw new IOException("Handle is not valid type.");
         }
         TypeEntity typeEntity = new TypeEntity(jsonNode);
+        addTags(jsonNode);
         typeRepository.save(typeEntity);
     
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
+
+    }
+
+    public void addTags(JsonNode type){
 
     }
 
