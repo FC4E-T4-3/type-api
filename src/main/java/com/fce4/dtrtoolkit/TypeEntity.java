@@ -8,34 +8,38 @@ public class TypeEntity {
     private String pid;
     private String prefix;
     private String type;
+    private String style;
+    private String origin;
     private JsonNode content;
-    private boolean validate;
 
-    public TypeEntity(String pid, String prefix, String type, JsonNode content, boolean validate)
+    public TypeEntity(String pid, String prefix, String type, JsonNode content, String style, String origin)
     {
         this.pid = pid;
         this.prefix = prefix;
         this.type = type;
         this.content = content;
-        this.validate = validate;
+        this.style = style;
+        this.origin = origin;
     }
 
-    public TypeEntity(JsonNode node)
+    public TypeEntity(JsonNode node, String style, String origin)
     {
         this.pid = node.get("id").textValue();
         this.prefix = pid.split("/")[0];
         this.type = node.get("type").textValue();
         this.content = node.get("content");
-        this.validate = true;
+        this.style = style;
+        this.origin = origin;
     }
 
-    public TypeEntity(JsonNode node, boolean validate)
+    public TypeEntity(JsonNode node, String origin)
     {
         this.pid = node.get("id").textValue();
         this.prefix = pid.split("/")[0];
         this.type = node.get("type").textValue();
         this.content = node.get("content");
-        this.validate = validate;
+        this.style = "unknown";
+        this.origin = origin;
     }
 
     public String getPid(){
@@ -54,8 +58,12 @@ public class TypeEntity {
         return this.content;
     }
 
-    public boolean getValidate(){
-        return this.validate;
+    public String getStyle(){
+        return this.style;
+    }
+
+    public String getOrigin(){
+        return this.origin;
     }
 
     /**
