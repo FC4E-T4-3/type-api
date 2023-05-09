@@ -1,16 +1,23 @@
 package com.fce4.dtrtoolkit;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+
+import org.tomlj.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,12 +29,14 @@ public class TypeService {
 
     @Autowired
     private TypeRepository typeRepository;
-    private String envFile;
 
+    private String config="src/main/config/config.toml";
+    
     Logger logger = Logger.getLogger(TypeService.class.getName());
 
     @PostConstruct
     public void init() throws IOException, InterruptedException {
+        logger.info(new File(".").getAbsolutePath());
         refreshRepository();
     }
 
@@ -39,28 +48,42 @@ public class TypeService {
     public void refreshRepository() throws IOException, InterruptedException{
         logger.info("Refreshing Cache");
 
-        //Currently only loding one URL. TODO: Read config file.
-        String uri = "https://dtr-test.pidconsortium.net/objects?query=*";
+        Path source = Paths.get(config);
+        TomlParseResult result = Toml.parse(source);
+      
+       for(var i : result.entrySet()){
+            int counter = 0;
+            TomlTable t = TomlTable.class.cast(i.getValue());
+            String dtr = i.getKey();
+            String uri = t.getString("url");
+            String suffix = t.getString("suffix");
+            List<Object> types = t.getArray("types").toList();
+            String style = t.getString("style");
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .timeout(Duration.ofSeconds(10))
-            .uri(URI.create(uri))
-            .build();
-            HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode actualObj = mapper.readTree(response.body());
-
-        for (JsonNode jsonNode : actualObj.get("results")) {
-            if(!jsonNode.has("type")){
-                continue;
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .timeout(Duration.ofSeconds(10))
+                .uri(URI.create(uri+suffix))
+                .build();
+                HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
+    
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode actualObj = mapper.readTree(response.body());
+    
+            for (JsonNode jsonNode : actualObj.get("results")) {
+                if(!jsonNode.has("type")){
+                    continue;
+                }
+                if(types.contains(jsonNode.get("type").textValue())){
+                    TypeEntity typeEntity = new TypeEntity(jsonNode, style, uri);
+                    typeRepository.save(typeEntity);
+                    counter+=1;
+                }
             }
-            TypeEntity typeEntity = new TypeEntity(jsonNode);
-            typeRepository.save(typeEntity);
-        }
-        logger.info("Refreshing Cache successful.");
+            logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
+       }
+       logger.info("Refreshing Cache successful.");
     }
 
     /**
@@ -104,7 +127,7 @@ public class TypeService {
             logger.warning(String.format("Requested Handle %s is not a valid type", pid));
             throw new IOException("Handle is not valid type.");
         }
-        TypeEntity typeEntity = new TypeEntity(jsonNode);
+        TypeEntity typeEntity = new TypeEntity(jsonNode, dtrUrl);
         addTags(jsonNode);
         typeRepository.save(typeEntity);
     
