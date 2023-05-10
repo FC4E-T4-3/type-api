@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
 	implementation 'com.github.javadev:underscore17:1.43'
 	implementation 'org.tomlj:tomlj:1.1.0'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
