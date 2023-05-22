@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
@@ -20,6 +19,7 @@ import java.time.Duration;
 import org.tomlj.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fce4.dtrtoolkit.validators.LegacyValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.annotation.PostConstruct;
@@ -29,6 +29,9 @@ public class TypeService {
 
     @Autowired
     private TypeRepository typeRepository;
+
+    @Autowired
+    private LegacyValidator legacyValidator;
 
     private String config="src/main/config/config.toml";
     
@@ -148,10 +151,7 @@ public class TypeService {
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws IOException, InterruptedException{
         logger.info(String.format("Getting Type Description for %s.", pid));
-        if(!typeRepository.hasPid(pid) || refresh){
-            logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
-            addType(pid);
-        }
+        checkAdd(pid, refresh);
         return typeRepository.get(pid).serialize();
     }
 
@@ -160,8 +160,26 @@ public class TypeService {
      * @param identifier the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public void getValidation(String pid) {
+    public void getValidation(String pid, Boolean refresh) throws IOException, InterruptedException {
+        
+        checkAdd(pid, refresh);
+        if(typeRepository.get(pid).getStyle().equals("legacy")){
+            legacyValidator.validation(pid);
+            return;
+        }
+    }
 
+    /**
+     * Helper function reusing repeated code. Adds a PID to the repo if conditions demand it.
+     * @param identifier the PID to add/refresh in the cache.
+     * @param refresh flag, if type should be refreshed
+     */
+    public void checkAdd(String pid, Boolean refresh) throws IOException, InterruptedException {
+        if(!typeRepository.hasPid(pid) || refresh){
+            logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
+            addType(pid);
+        }
+        return;
     }
 
     /**
