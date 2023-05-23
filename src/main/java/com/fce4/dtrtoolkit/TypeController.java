@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.logging.Logger;
 
 @RestController
@@ -63,12 +64,12 @@ public class TypeController {
      * Returns the JSON validation schema for a type. 
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
+    public ResponseEntity<ObjectNode> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
     
         final HttpHeaders responseHeaders = new HttpHeaders();
-        typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));
+        ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));
 
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
-        return new ResponseEntity<String>("Success!", responseHeaders, HttpStatus.OK);
+        return new ResponseEntity<ObjectNode>(node, responseHeaders, HttpStatus.OK);
     }
 }

@@ -21,6 +21,7 @@ import org.tomlj.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fce4.dtrtoolkit.validators.LegacyValidator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.annotation.PostConstruct;
 
@@ -81,6 +82,13 @@ public class TypeService {
                 if(types.contains(jsonNode.get("type").textValue())){
                     TypeEntity typeEntity = new TypeEntity(jsonNode, style, uri);
                     typeRepository.save(typeEntity);
+                    if(typeEntity.getSchema().equals("PID-InfoType")){
+                        if(typeEntity.getContent().has("properties")){   
+                            System.out.println(typeEntity.getContent().get("properties"));
+                        }
+                    }
+                    
+
                     counter+=1;
                 }
             }
@@ -91,6 +99,7 @@ public class TypeService {
 
     /**
      * Adds a single data type to the repository. Either for selective refreshing, or to add valid types not in the configured DTR's.
+     * Only works for handle's that forward to a type in a cordra instance.
      * @param identifier the PID to add/refresh in the cache.
      * @throws InterruptedException
      * @throws IOException
@@ -160,13 +169,15 @@ public class TypeService {
      * @param identifier the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public void getValidation(String pid, Boolean refresh) throws IOException, InterruptedException {
+    public ObjectNode getValidation(String pid, Boolean refresh) throws IOException, InterruptedException {
         
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = mapper.createObjectNode();
         checkAdd(pid, refresh);
         if(typeRepository.get(pid).getStyle().equals("legacy")){
-            legacyValidator.validation(pid);
-            return;
+            root = legacyValidator.validation(pid);
         }
+        return root;
     }
 
     /**
