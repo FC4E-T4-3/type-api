@@ -82,13 +82,6 @@ public class TypeService {
                 if(types.contains(jsonNode.get("type").textValue())){
                     TypeEntity typeEntity = new TypeEntity(jsonNode, style, uri);
                     typeRepository.save(typeEntity);
-                    if(typeEntity.getSchema().equals("PID-InfoType")){
-                        if(typeEntity.getContent().has("properties")){   
-                            System.out.println(typeEntity.getContent().get("properties"));
-                        }
-                    }
-                    
-
                     counter+=1;
                 }
             }
@@ -140,14 +133,18 @@ public class TypeService {
             throw new IOException("Handle is not valid type.");
         }
         TypeEntity typeEntity = new TypeEntity(jsonNode, dtrUrl);
-        addTags(jsonNode);
         typeRepository.save(typeEntity);
+        addTags(typeEntity);
     
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
 
     }
 
-    public void addTags(JsonNode type){
+    /**
+     * Adds the provided in the type to the TypeRepository
+     * @param typeEntity the typeEntity Object whose tags should be added.
+     */
+    public void addTags(TypeEntity typeEntity){
 
     }
 
@@ -181,7 +178,7 @@ public class TypeService {
     }
 
     /**
-     * Helper function reusing repeated code. Adds a PID to the repo if conditions demand it.
+     * Helper function avoiding repeated code. Adds a PID to the repo if conditions demand it.
      * @param identifier the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
@@ -190,7 +187,7 @@ public class TypeService {
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
             addType(pid);
         }
-        return;
+        //return;
     }
 
     /**
