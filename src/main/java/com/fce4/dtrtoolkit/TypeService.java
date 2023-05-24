@@ -133,11 +133,13 @@ public class TypeService {
             throw new IOException("Handle is not valid type.");
         }
         TypeEntity typeEntity = new TypeEntity(jsonNode, dtrUrl);
+		if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
+			typeEntity.setStyle("legacy");
+		}
         typeRepository.save(typeEntity);
         addTags(typeEntity);
     
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
-
     }
 
     /**
@@ -187,7 +189,6 @@ public class TypeService {
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
             addType(pid);
         }
-        //return;
     }
 
     /**

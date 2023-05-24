@@ -66,6 +66,10 @@ public class TypeEntity {
         return this.origin;
     }
 
+    public void setStyle(String style){
+        this.style = style;
+    }
+
     /**
      * Serializes a TypeObject to a JsonNode object. The setters and getters are required for the mapper.
      * @return a JsonNode representing the TypeObject.

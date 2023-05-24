@@ -97,17 +97,21 @@ public class LegacyValidator extends BaseValidator {
         return node;
     }
 
+    /**
+     * Generates the validation schema for a single InfoType.
+     * @param type the TypeEntity of which the schema is to be created
+     */
     public ObjectNode handleInfoType(TypeEntity typeEntity){
         ObjectNode node = mapper.createObjectNode();
         ArrayNode mandatory = mapper.createArrayNode();
         JsonNode properties = typeEntity.getContent().get("properties");
-        //System.out.println(properties);
         ObjectNode propertyNode = mapper.createObjectNode();
 
         for(JsonNode i : properties){
             ObjectNode tempNode = mapper.createObjectNode();
             TypeEntity tempEntity = typeRepository.get(i.get("identifier").textValue());
-
+            
+            //Function is recursevily called, until only basic types remain.
             if(tempEntity.getSchema().equals("PID-BasicInfoType")){
                 tempNode = handleBasicType(tempEntity);
             }
@@ -135,6 +139,11 @@ public class LegacyValidator extends BaseValidator {
         return node;
     }
 
+    /**
+     * Entry function for validation. Creates the root node and depending on the schema of the type
+     * moves foward with the validation. BasicInfoTypes get generated directly, InfoTypes recursively.
+     * @param type the TypeEntity of which the schema is to be created
+     */
     public ObjectNode validation(String pid) {
         TypeEntity type = typeRepository.get(pid);
         ObjectNode root = mapper.createObjectNode();
