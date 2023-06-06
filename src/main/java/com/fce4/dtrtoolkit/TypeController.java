@@ -62,12 +62,13 @@ public class TypeController {
      * Returns the JSON validation schema for a type. 
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<ObjectNode> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
+    public String validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
     
         final HttpHeaders responseHeaders = new HttpHeaders();
         ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));
 
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
-        return new ResponseEntity<ObjectNode>(node, responseHeaders, HttpStatus.OK);
+        return node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\");
+        //return new ResponseEntity<ObjectNode>(node, responseHeaders, HttpStatus.OK);
     }
 }
