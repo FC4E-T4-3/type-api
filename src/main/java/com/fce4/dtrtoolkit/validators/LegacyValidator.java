@@ -12,11 +12,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.fce4.dtrtoolkit.TypeEntity;
 
+    /**
+     * The class used to generate validation schemas for legacy types, which are types from the old GWDG DTR's
+     */
 @Component
 public class LegacyValidator extends BaseValidator {
 
     Logger logger = Logger.getLogger(LegacyValidator.class.getName());
 
+    /**
+     * Describing possible relations between the properties of a type.
+     */
     enum PropRelation {
         DENY_ADD,
         ARRAY,
@@ -29,11 +35,13 @@ public class LegacyValidator extends BaseValidator {
         NONE,
     }
 
+    /**
+     * Describing if a possible shortened version of the schema should be used
+     */
     enum Abbreviation {
         YES,
         NO,
         BOTH,
-        NONE
     }
 
 
@@ -63,7 +71,7 @@ public class LegacyValidator extends BaseValidator {
             for(String i : restrictions){
                 String key = i.split(":")[0];
                 String value = i.split(":")[1];
-                if(isNumeric){
+                if(isNumeric || key.equals("minLength") || key.equals("maxLength")){
                     Double valueNumeric = Double.parseDouble(value);
                     if(valueNumeric % 1 == 0){
                         node.put(key, Integer.parseInt(value));
@@ -79,8 +87,7 @@ public class LegacyValidator extends BaseValidator {
         //Same thing as restrictions for a possible enum.
         if(properties.has("enum")){
             ArrayNode arrayNode = node.putArray("enum");
-            String cleaned = properties.get("enum").textValue()
-                .replaceAll("\\s+","").replaceAll("\"","")
+            String cleaned = properties.get("enum").textValue().replaceAll("\"","")
                 .replaceAll("\\[", "").replaceAll("\\]", "");
             String[] enumValues = cleaned.split(",");
             for(String i : enumValues){
@@ -97,7 +104,7 @@ public class LegacyValidator extends BaseValidator {
             }
         }
 
-        //Add a regular expression if given
+        //Add a regular expression if given.
         if(properties.has("regexp")){
             String regex = properties.get("regexp").textValue();
             node.put("pattern", regex);
@@ -121,7 +128,7 @@ public class LegacyValidator extends BaseValidator {
     }
 
     /**
-     * Generates the validation schema for a single InfoType.
+     * Generates the validation schema for a single InfoType. KIP's are handled here as well, since only some conditions are different.
      * @param type the TypeEntity of which the schema is to be created
      */
     public ObjectNode handleInfoType(TypeEntity typeEntity, Boolean initial){
@@ -135,10 +142,7 @@ public class LegacyValidator extends BaseValidator {
         ObjectNode propertyNode = processProperties(typeEntity, mandatory);
 		ObjectNode node = processPropRelations(typeEntity, propertyNode, mandatory, initial);
 
-        // if(!mandatory.isEmpty()){
-        //     node.set("required", mandatory);
-        // }
-        
+        //If no shortened version is desired for the root node, nest it as property in a new node.
         if(initial){
             if(abbreviation.equals(Abbreviation.NO)){
                 ObjectNode tmpNode = mapper.createObjectNode();
@@ -150,11 +154,17 @@ public class LegacyValidator extends BaseValidator {
                 node.set("properties", tmpNode);
                 node.set("required",tmpReq);
                 node.put("additionalProperties", false);
+                node.put("type", "object");
             }
         }
         return node;
     }
 
+    /**
+     * Function that iterates all properties of a type. According to the schema of the type (Basic/Info), properties are directly or recursively resolved.
+     * @param typeEntity the TypeEntity of which the schema is to be created
+     * @param mandatory the ArrayNode to store the mandatory properties, to be passed to next function 
+     */
 	ObjectNode processProperties(TypeEntity typeEntity, ArrayNode mandatory) {
         JsonNode properties = typeEntity.getContent().get("properties");
         ObjectNode propertyNode = mapper.createObjectNode();
@@ -186,40 +196,51 @@ public class LegacyValidator extends BaseValidator {
         }
 		return propertyNode;
 	}
-
-    void replaceKeyWithContent(ObjectNode objectNode, String key) {
-        ObjectNode tmp = objectNode.get(key).deepCopy();
-        ObjectNode tmp2 = mapper.createObjectNode();
-        tmp2.setAll(tmp);
-        objectNode.remove(key);
-        objectNode.setAll(tmp2);
-    }
-
+    
+    /**
+     * Function that handles the relations that exist between properties of a type. I.e., if it is an array, tuple, oneOf etc.
+     * The function handles to more complex assembling of the schema parts.
+     * @param typeEntity the TypeEntity of which the schema is to be created
+     * @param propertyNode the ObjectNode containing the properties
+     * @param mandatory the ArrayNode to store the mandatory properties, to be passed to next function 
+     */
 	ObjectNode processPropRelations(TypeEntity typeEntity, ObjectNode propertyNode, ArrayNode mandatory, Boolean initial) {
         ObjectNode node = mapper.createObjectNode();
         PropRelation propRelation = getPropRelation(typeEntity);
         Abbreviation abbreviation = getAbbreviation(typeEntity);
+        Boolean omitName = firstPropOmitName(typeEntity); //Check if the only property has "omit name as subsidiary" set to true
 		
 		switch(propRelation){
             case DENY_ADD:
-            if(abbreviation.equals(Abbreviation.YES) && !initial){
-                node.put("additionalProperties", false);
-                node.set("items", arrayFromObject(propertyNode));
-                node.put("type", "array");
-            }
-            else{
-                node.put("additionalProperties", false);
-                node.put("type", "object");
-                node.set("properties", propertyNode);
-                if(!mandatory.isEmpty()){
-                    node.set("required", mandatory);
+                if(propertyNode.size() == 1 && omitName){
+                    if(omitName){
+                        String key = getJSONKeys(propertyNode).get(0);
+                        node = propertyNode.get(key).deepCopy();
+                    }
                 }
-            }
+                else{
+                    if(abbreviation.equals(Abbreviation.YES) && !initial){
+                        node.set("items", arrayFromObject(propertyNode));
+                        node.put("type", "array");
+                    }
+                    else{
+                        node.put("type", "object");
+                        node.set("properties", propertyNode);
+                        if(!mandatory.isEmpty()){
+                            node.set("required", mandatory);
+                        }
+                    }
+                }
+                node.put("additionalProperties", false);
                 break;
+
             case ARRAY:
-                Boolean omitName = firstPropOmitName(typeEntity);
                 node.put("type", "array");
                 ObjectNode propTmp = mapper.createObjectNode();
+                //Arrays are special cases for legacy types, whereas a type is considered only an array iff it has one property, otherwise it's a tuple.
+                //In addition to the amount of properties, multiple conditions must be considered: 
+                // - Should the name of the property be omitted? (Only relevant for true arrays)
+                // - Is 'Abbreviated Form' 
                 if(propertyNode.size() == 1){
                     if(omitName){
                         if(abbreviation.equals(Abbreviation.YES)){
@@ -249,43 +270,66 @@ public class LegacyValidator extends BaseValidator {
                     }
                     node.put("minItems", 1);
                 }
+                //Means we are handling a tuple
                 else{
-                    node.put("additionalItems", false);
-                    propTmp.set("properties", arrayFromObject(propertyNode));
-                    node.set("items", propTmp);
-                    if(!mandatory.isEmpty()){
-                        node.with("items").set("required", mandatory);
+                    if(omitName){
+                        node.set("items", arrayFromObject(propertyNode));
+                    }
+                    else{
+                        node.put("additionalItems", false);
+                        propTmp.set("properties", arrayFromObject(propertyNode));
+                        node.set("items", propTmp);
+                        if(!mandatory.isEmpty()){
+                            node.with("items").set("required", mandatory);
+                        }
                     }
                 }
-               
-
                 break;
+
 			case ONE_OF:
 				node.put("type", "object");
 				node.set("oneOf", arrayFromObject(propertyNode));
                 break;
+
 			case ALL_OF:
 				node.put("type", "object");
 				node.set("allOf", arrayFromObject(propertyNode));
                 break;
+
 			case ANY_OF:
 				node.put("type", "object");
 				node.set("anyOf", arrayFromObject(propertyNode));
                 break;
+
 			case NONE:
-                if(abbreviation.equals(Abbreviation.YES) && !initial){
-                    node.set("items", arrayFromObject(propertyNode));
-                    node.put("type", "array");
+                if(propertyNode.size() == 1 && omitName){
+                    if(omitName){
+                        String key = getJSONKeys(propertyNode).get(0);
+                        node = propertyNode.get(key).deepCopy();
+                    }
                 }
                 else{
-                    node.put("type", "object");
-                    node.set("properties", propertyNode);
+                    if(abbreviation.equals(Abbreviation.YES) && !initial){
+                        node.set("items", arrayFromObject(propertyNode));
+                        node.put("type", "array");
+                    }
+                    else{
+                        node.put("type", "object");
+                        node.set("properties", propertyNode);
+                        if(!mandatory.isEmpty()){
+                            node.set("required", mandatory);
+                        }
+                    }
                 }
-				break;
+                break;
         }
 		return  node;
 	}
 
+    /**
+     * Takes the elements of an object and converts them into a Json ArrayNode
+     * @param objectNode the ObjectNode containing the properties
+     */
 	ArrayNode arrayFromObject(ObjectNode objectNode){
 		ArrayNode propArray = mapper.createArrayNode();
 		for(JsonNode i : objectNode){
@@ -294,6 +338,10 @@ public class LegacyValidator extends BaseValidator {
 		return propArray;
 	}
 
+     /**
+     * Helper function, returns the keys on the first level of a JSON object
+     * @param objectNode the ObjectNode in question
+     */
     public List<String> getJSONKeys(ObjectNode objectNode) {
         List<String> keys = new ArrayList<>();
         Iterator<String> iterator = objectNode.fieldNames();
@@ -301,6 +349,10 @@ public class LegacyValidator extends BaseValidator {
         return keys;
     }
 
+    /**
+     * Extracts the Propety Relation from a TypeEntity
+     * @param typeEntity the TypeEntity in question
+     */
     PropRelation getPropRelation(TypeEntity typeEntity) {
         JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics").get(0);
         PropRelation propRelation = PropRelation.NONE;
@@ -323,10 +375,12 @@ public class LegacyValidator extends BaseValidator {
         }
         return propRelation;
     } 
-
+    /**
+     * Extracts if a TypeEntity allows an abbreviated form
+     * @param typeEntity the TypeEntity in question
+     */
     Abbreviation getAbbreviation(TypeEntity typeEntity) {
-
-        Abbreviation abbreviation = Abbreviation.NONE;
+        Abbreviation abbreviation = Abbreviation.NO;
         if(typeEntity.getContent().has("representationsAndSemantics")){
             if(typeEntity.getContent().get("representationsAndSemantics").get(0).has("allowAbbreviatedForm")){
                 JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics").get(0);
@@ -345,8 +399,13 @@ public class LegacyValidator extends BaseValidator {
 
         }
         return abbreviation;
-    } 
+    }
 
+    /**
+     * Since the omitName property is seemingly only relevant for single element types, i.e. arrays, this function extracts that property
+     * only for the first, and only, property
+     * @param typeEntity the TypeEntity in question
+     */
     Boolean firstPropOmitName(TypeEntity typeEntity){
         JsonNode properties = typeEntity.getContent().get("properties").get(0);
         if(properties.has("representationsAndSemantics")){
