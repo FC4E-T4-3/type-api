@@ -1,6 +1,9 @@
 package com.fce4.dtrtoolkit.validators;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +16,26 @@ import com.fce4.dtrtoolkit.TypeEntity;
 public class LegacyValidator extends BaseValidator {
 
     Logger logger = Logger.getLogger(LegacyValidator.class.getName());
+
+    enum PropRelation {
+        DENY_ADD,
+        ARRAY,
+        ALL_OF,
+        ANY_OF,
+        ONE_OF,
+        // NOT,
+        // SET,
+        // TUPLE,
+        NONE,
+    }
+
+    enum Abbreviation {
+        YES,
+        NO,
+        BOTH,
+        NONE
+    }
+
 
     /**
      * Generates the validation schema for a single basic info type.
@@ -101,42 +124,240 @@ public class LegacyValidator extends BaseValidator {
      * Generates the validation schema for a single InfoType.
      * @param type the TypeEntity of which the schema is to be created
      */
-    public ObjectNode handleInfoType(TypeEntity typeEntity){
-        ObjectNode node = mapper.createObjectNode();
+    public ObjectNode handleInfoType(TypeEntity typeEntity, Boolean initial){
+       
         ArrayNode mandatory = mapper.createArrayNode();
+		Abbreviation abbreviation = Abbreviation.NO;
+		if(!typeEntity.getSchema().equals("KernelInformationProfile")){
+			abbreviation = getAbbreviation(typeEntity);
+		}
+
+        ObjectNode propertyNode = processProperties(typeEntity, mandatory);
+		ObjectNode node = processPropRelations(typeEntity, propertyNode, mandatory, initial);
+
+        // if(!mandatory.isEmpty()){
+        //     node.set("required", mandatory);
+        // }
+        
+        if(initial){
+            if(abbreviation.equals(Abbreviation.NO)){
+                ObjectNode tmpNode = mapper.createObjectNode();
+                tmpNode.set(typeEntity.getName(), node);
+                node = mapper.createObjectNode();
+                ArrayNode tmpReq = mapper.createArrayNode();
+                
+                tmpReq.add(typeEntity.getName());
+                node.set("properties", tmpNode);
+                node.set("required",tmpReq);
+                node.put("additionalProperties", false);
+            }
+        }
+        return node;
+    }
+
+	ObjectNode processProperties(TypeEntity typeEntity, ArrayNode mandatory) {
         JsonNode properties = typeEntity.getContent().get("properties");
         ObjectNode propertyNode = mapper.createObjectNode();
-
-        for(JsonNode i : properties){
+		
+		for(JsonNode i : properties){
             ObjectNode tempNode = mapper.createObjectNode();
             TypeEntity tempEntity = typeRepository.get(i.get("identifier").textValue());
             
-            //Function is recursevily called, until only basic types remain.
+            //Function is recursively called, until only basic types remain.
             if(tempEntity.getSchema().equals("PID-BasicInfoType")){
                 tempNode = handleBasicType(tempEntity);
             }
             else{
-                tempNode = handleInfoType(tempEntity);
+                tempNode = handleInfoType(tempEntity, false);
             }
             
             if(tempEntity.getContent().has("description")){
                 tempNode.put("description", tempEntity.getContent().get("description").textValue());
             }
 
+            propertyNode.set(i.get("name").textValue(), tempNode);
+
             if(i.has("representationsAndSemantics")){
-                JsonNode repSem = i.get("representationsAndSemantics").get(0);
-                if(repSem.get("obligation").textValue().equals("Mandatory")){
-                    mandatory.add(i.get("name").textValue());
+                JsonNode repSem = i.get("representationsAndSemantics").get(0);	
+				if(repSem.get("obligation").textValue().equals("Mandatory")){
+					mandatory.add(i.get("name").textValue());
+				}
+            }
+        }
+		return propertyNode;
+	}
+
+    void replaceKeyWithContent(ObjectNode objectNode, String key) {
+        ObjectNode tmp = objectNode.get(key).deepCopy();
+        ObjectNode tmp2 = mapper.createObjectNode();
+        tmp2.setAll(tmp);
+        objectNode.remove(key);
+        objectNode.setAll(tmp2);
+    }
+
+	ObjectNode processPropRelations(TypeEntity typeEntity, ObjectNode propertyNode, ArrayNode mandatory, Boolean initial) {
+        ObjectNode node = mapper.createObjectNode();
+        PropRelation propRelation = getPropRelation(typeEntity);
+        Abbreviation abbreviation = getAbbreviation(typeEntity);
+		
+		switch(propRelation){
+            case DENY_ADD:
+            if(abbreviation.equals(Abbreviation.YES) && !initial){
+                node.put("additionalProperties", false);
+                node.set("items", arrayFromObject(propertyNode));
+                node.put("type", "array");
+            }
+            else{
+                node.put("additionalProperties", false);
+                node.put("type", "object");
+                node.set("properties", propertyNode);
+                if(!mandatory.isEmpty()){
+                    node.set("required", mandatory);
                 }
             }
-            
-            propertyNode.set(i.get("name").textValue(), tempNode);
+                break;
+            case ARRAY:
+                Boolean omitName = firstPropOmitName(typeEntity);
+                node.put("type", "array");
+                ObjectNode propTmp = mapper.createObjectNode();
+                if(propertyNode.size() == 1){
+                    if(omitName){
+                        if(abbreviation.equals(Abbreviation.YES)){
+                            String key = getJSONKeys(propertyNode).get(0);
+                            ArrayNode propArray = propertyNode.get(key).get("items").deepCopy();
+                            propTmp.set("items", propArray);
+                            node.set("items",propTmp);
+                        }
+                        else{
+                            String key = getJSONKeys(propertyNode).get(0);
+                            if(propertyNode.has("properties")){
+                                propTmp.set("properties", propertyNode.get(key).get("properties").deepCopy());
+                                if(!mandatory.isEmpty()){
+                                    node.with("items").set("required", mandatory);
+                                }
+                            }
+                            else{
+                                propTmp = propertyNode.get(key).deepCopy();
+                            }
+                            node.set("items",propTmp);
+                            
+                        }
+                    }
+                    else{
+                        propTmp.set("properties", propertyNode);
+                        node.set("items", propTmp);
+                    }
+                    node.put("minItems", 1);
+                }
+                else{
+                    node.put("additionalItems", false);
+                    propTmp.set("properties", arrayFromObject(propertyNode));
+                    node.set("items", propTmp);
+                    if(!mandatory.isEmpty()){
+                        node.with("items").set("required", mandatory);
+                    }
+                }
+               
+
+                break;
+			case ONE_OF:
+				node.put("type", "object");
+				node.set("oneOf", arrayFromObject(propertyNode));
+                break;
+			case ALL_OF:
+				node.put("type", "object");
+				node.set("allOf", arrayFromObject(propertyNode));
+                break;
+			case ANY_OF:
+				node.put("type", "object");
+				node.set("anyOf", arrayFromObject(propertyNode));
+                break;
+			case NONE:
+                if(abbreviation.equals(Abbreviation.YES) && !initial){
+                    node.set("items", arrayFromObject(propertyNode));
+                    node.put("type", "array");
+                }
+                else{
+                    node.put("type", "object");
+                    node.set("properties", propertyNode);
+                }
+				break;
         }
-        node.set("properties", propertyNode);
-        if(!mandatory.isEmpty()){
-            node.set("required", mandatory);
+		return  node;
+	}
+
+	ArrayNode arrayFromObject(ObjectNode objectNode){
+		ArrayNode propArray = mapper.createArrayNode();
+		for(JsonNode i : objectNode){
+			propArray.add(i);
+		}
+		return propArray;
+	}
+
+    public List<String> getJSONKeys(ObjectNode objectNode) {
+        List<String> keys = new ArrayList<>();
+        Iterator<String> iterator = objectNode.fieldNames();
+        iterator.forEachRemaining(e -> keys.add(e));
+        return keys;
+    }
+
+    PropRelation getPropRelation(TypeEntity typeEntity) {
+        JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics").get(0);
+        PropRelation propRelation = PropRelation.NONE;
+        switch(repSemObj.get("subSchemaRelation").textValue()){ 
+            case "denyAdditionalProperties":
+                propRelation = PropRelation.DENY_ADD;
+                break;
+            case "isArrayWithGivenProperties":
+                propRelation = PropRelation.ARRAY;
+                break;
+            case "requestAllOfProperties":
+                propRelation = PropRelation.ALL_OF;
+                break;
+            case "requestAnyOfProperties":
+                propRelation = PropRelation.ANY_OF;
+                break;
+            case "requestOneOfProperties":
+                propRelation = PropRelation.ONE_OF;
+                break;
         }
-        return node;
+        return propRelation;
+    } 
+
+    Abbreviation getAbbreviation(TypeEntity typeEntity) {
+
+        Abbreviation abbreviation = Abbreviation.NONE;
+        if(typeEntity.getContent().has("representationsAndSemantics")){
+            if(typeEntity.getContent().get("representationsAndSemantics").get(0).has("allowAbbreviatedForm")){
+                JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics").get(0);
+                switch(repSemObj.get("allowAbbreviatedForm").textValue()){ 
+                    case "No":
+                        abbreviation = Abbreviation.NO;
+                        break;
+                    case "Yes":
+                        abbreviation = Abbreviation.YES;
+                        break;
+                    case "Both":
+                        abbreviation = Abbreviation.BOTH;
+                        break;
+                }
+            }
+
+        }
+        return abbreviation;
+    } 
+
+    Boolean firstPropOmitName(TypeEntity typeEntity){
+        JsonNode properties = typeEntity.getContent().get("properties").get(0);
+        if(properties.has("representationsAndSemantics")){
+            JsonNode repSem = properties.get("representationsAndSemantics").get(0);	
+            if(repSem.has("allowOmitSubsidiaries")){
+                if(repSem.get("allowOmitSubsidiaries").textValue().equals("No")){
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -152,8 +373,7 @@ public class LegacyValidator extends BaseValidator {
             root = handleBasicType(type);
         }
         else{
-            root = handleInfoType(type);
-            root.put("type", "object");
+            root = handleInfoType(type, true);
         }
         
         //Inserting common fields 'title', 'description' and '$schema'. Description optional.

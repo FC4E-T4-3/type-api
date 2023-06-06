@@ -10,9 +10,10 @@ public class TypeEntity {
     private String type;
     private String style;
     private String origin;
+    private String name;
     private JsonNode content;
 
-    public TypeEntity(String pid, String prefix, String type, JsonNode content, String style, String origin)
+    public TypeEntity(String pid, String prefix, String type, JsonNode content, String style, String origin, String name)
     {
         this.pid = pid;
         this.prefix = prefix;
@@ -20,6 +21,7 @@ public class TypeEntity {
         this.content = content;
         this.style = style;
         this.origin = origin;
+        this.name = name;
     }
 
     public TypeEntity(JsonNode node, String style, String origin)
@@ -29,6 +31,7 @@ public class TypeEntity {
         this.type = node.get("type").textValue();
         this.content = node.get("content");
         this.style = style;
+        this.name = node.get("content").get("name").textValue();
         this.origin = origin;
     }
 
@@ -39,6 +42,7 @@ public class TypeEntity {
         this.type = node.get("type").textValue();
         this.content = node.get("content");
         this.style = "unknown";
+        this.name = node.get("content").get("name").textValue();
         this.origin = origin;
     }
 
@@ -60,6 +64,10 @@ public class TypeEntity {
 
     public String getStyle(){
         return this.style;
+    }
+
+    public String getName(){
+        return this.name;
     }
 
     public String getOrigin(){
