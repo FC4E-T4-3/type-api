@@ -49,5 +49,5 @@ jobs:
 
       - name: Build and publish the Docker image
         run: |
-          docker build -t ghcr.io/fc4e-t4-3/dtr-toolkit -f .
+          docker build -t ghcr.io/fc4e-t4-3/dtr-toolkit .
           docker push ghcr.io/fc4e-t4-3/dtr-toolkit:latest
