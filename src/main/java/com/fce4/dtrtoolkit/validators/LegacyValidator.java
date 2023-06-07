@@ -164,6 +164,9 @@ public class LegacyValidator extends BaseValidator {
 
         //If no shortened version is desired for the root node, nest it as property in a new node.
         if(initial){
+            if(typeEntity.getContent().has("description")){
+                node.put("description", typeEntity.getContent().get("description").textValue());
+            }
             if(abbreviation.equals(Abbreviation.NO)){
                 ObjectNode tmpNode = mapper.createObjectNode();
                 tmpNode.set(typeEntity.getName(), node);
