@@ -1,7 +1,10 @@
 package com.fce4.dtrtoolkit.validators;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -76,7 +79,9 @@ public class LegacyValidator extends BaseValidator {
                     if(valueNumeric % 1 == 0){
                         node.put(key, Integer.parseInt(value));
                     }
-                    node.put(key, valueNumeric);
+                    else{
+                        node.put(key, valueNumeric);
+                    }
                 }
                 else{
                     node.put(key, value);
@@ -87,16 +92,31 @@ public class LegacyValidator extends BaseValidator {
         //Same thing as restrictions for a possible enum.
         if(properties.has("enum")){
             ArrayNode arrayNode = node.putArray("enum");
-            String cleaned = properties.get("enum").textValue().replaceAll("\"","")
-                .replaceAll("\\[", "").replaceAll("\\]", "");
-            String[] enumValues = cleaned.split(",");
+            // String cleaned = properties.get("enum").textValue().replaceAll("\"","")
+            //     .replaceAll("\\[", "").replaceAll("\\]", "");
+            // String[] enumValues = cleaned.split(",");
+            String cleaned = properties.get("enum").textValue().replaceAll("\\[", "")
+                .replaceAll("\\]", "");
+            ArrayList<String> enumValues = new ArrayList<String>(Arrays.asList(cleaned.split("\"")));
+            enumValues.removeAll(Collections.singleton(","));
+            enumValues.removeAll(Collections.singleton(", "));
+            enumValues.removeAll(Collections.singleton(",  "));
+            enumValues.removeAll(Collections.singleton(",   "));
+            enumValues.removeAll(Collections.singleton(""));
+            enumValues.removeAll(Collections.singleton(" "));
+            enumValues.removeAll(Collections.singleton("  "));
+            enumValues.removeAll(Collections.singleton("   "));
+
+
             for(String i : enumValues){
                 if(isNumeric){
                     Double valueNumeric = Double.parseDouble(i);
                     if(valueNumeric % 1 == 0){
                         arrayNode.add(Integer.parseInt(i));
                     }
-                    arrayNode.add(valueNumeric);
+                    else{
+                        arrayNode.add(valueNumeric);
+                    }
                 }
                 else{
                     arrayNode.add(i);
@@ -209,7 +229,15 @@ public class LegacyValidator extends BaseValidator {
         PropRelation propRelation = getPropRelation(typeEntity);
         Abbreviation abbreviation = getAbbreviation(typeEntity);
         Boolean omitName = firstPropOmitName(typeEntity); //Check if the only property has "omit name as subsidiary" set to true
-		
+        JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics");
+        Boolean addPropSec = false;
+        //Next part is hacky, but there are never more than two elements, and never used in a different way.
+        if(repSemObj.size() == 2){
+            if(repSemObj.get(1).get("subSchemaRelation").textValue().equals("denyAdditionalProperties")){ 
+                addPropSec = true;
+            }
+        }
+
 		switch(propRelation){
             case DENY_ADD:
                 if(propertyNode.size() == 1 && omitName){
@@ -221,6 +249,7 @@ public class LegacyValidator extends BaseValidator {
                 else{
                     if(abbreviation.equals(Abbreviation.YES) && !initial){
                         node.set("items", arrayFromObject(propertyNode));
+                        node.withObject("items").put("additionalProperties", false);
                         node.put("type", "array");
                     }
                     else{
@@ -229,9 +258,9 @@ public class LegacyValidator extends BaseValidator {
                         if(!mandatory.isEmpty()){
                             node.set("required", mandatory);
                         }
+                        node.put("additionalProperties", false);
                     }
                 }
-                node.put("additionalProperties", false);
                 break;
 
             case ARRAY:
@@ -248,27 +277,38 @@ public class LegacyValidator extends BaseValidator {
                             ArrayNode propArray = propertyNode.get(key).get("items").deepCopy();
                             propTmp.set("items", propArray);
                             node.set("items",propTmp);
+                            if(addPropSec){
+                                node.withObject("items").put("additionalProperties", false);
+                            }
                         }
                         else{
                             String key = getJSONKeys(propertyNode).get(0);
                             if(propertyNode.has("properties")){
                                 propTmp.set("properties", propertyNode.get(key).get("properties").deepCopy());
+                                if(addPropSec){
+                                    propTmp.put("additionalProperties", false);
+                                }
                                 if(!mandatory.isEmpty()){
-                                    node.with("items").set("required", mandatory);
+                                    node.withObject("items").set("required", mandatory);
                                 }
                             }
                             else{
                                 propTmp = propertyNode.get(key).deepCopy();
+                                if(addPropSec){
+                                    propTmp.put("additionalProperties", false);
+                                }
                             }
                             node.set("items",propTmp);
-                            
                         }
                     }
                     else{
                         propTmp.set("properties", propertyNode);
                         node.set("items", propTmp);
+                        if(addPropSec){
+                            node.withObject("items").put("additionalProperties", false);
+                        }
+                        node.put("minItems", 1);
                     }
-                    node.put("minItems", 1);
                 }
                 //Means we are handling a tuple
                 else{
@@ -280,7 +320,7 @@ public class LegacyValidator extends BaseValidator {
                         propTmp.set("properties", arrayFromObject(propertyNode));
                         node.set("items", propTmp);
                         if(!mandatory.isEmpty()){
-                            node.with("items").set("required", mandatory);
+                            node.withObject("items").set("required", mandatory);
                         }
                     }
                 }
@@ -323,6 +363,30 @@ public class LegacyValidator extends BaseValidator {
                 }
                 break;
         }
+
+        //Same here, hacky but covers all cases.
+        if(repSemObj.get(0).has("restrict")){
+            String cleaned = repSemObj.get(0).get("restrict").textValue()
+                .replaceAll("\\s+","").replaceAll("\"","");
+            String[] restrictions = cleaned.split(",");
+            for(String i : restrictions){
+                String key = i.split(":")[0];
+                String value = i.split(":")[1];
+                if(NumberUtils.isParsable(value)){
+                    Double valueNumeric = Double.parseDouble(value);
+                    if(valueNumeric % 1 == 0){
+                        node.put(key, Integer.parseInt(value));
+                    }
+                    else{
+                        node.put(key, valueNumeric);
+                    }
+                }
+                else{
+                    node.put(key, value);
+                }
+            }
+        }
+
 		return  node;
 	}
 
