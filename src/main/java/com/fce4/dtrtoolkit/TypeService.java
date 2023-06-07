@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
@@ -20,7 +19,9 @@ import java.time.Duration;
 import org.tomlj.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fce4.dtrtoolkit.validators.LegacyValidator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.annotation.PostConstruct;
 
@@ -29,6 +30,9 @@ public class TypeService {
 
     @Autowired
     private TypeRepository typeRepository;
+
+    @Autowired
+    private LegacyValidator legacyValidator;
 
     private String config="src/main/config/config.toml";
     
@@ -88,6 +92,7 @@ public class TypeService {
 
     /**
      * Adds a single data type to the repository. Either for selective refreshing, or to add valid types not in the configured DTR's.
+     * Only works for handle's that forward to a type in a cordra instance.
      * @param identifier the PID to add/refresh in the cache.
      * @throws InterruptedException
      * @throws IOException
@@ -128,14 +133,20 @@ public class TypeService {
             throw new IOException("Handle is not valid type.");
         }
         TypeEntity typeEntity = new TypeEntity(jsonNode, dtrUrl);
-        addTags(jsonNode);
+		if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
+			typeEntity.setStyle("legacy");
+		}
         typeRepository.save(typeEntity);
+        addTags(typeEntity);
     
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
-
     }
 
-    public void addTags(JsonNode type){
+    /**
+     * Adds the provided in the type to the TypeRepository
+     * @param typeEntity the typeEntity Object whose tags should be added.
+     */
+    public void addTags(TypeEntity typeEntity){
 
     }
 
@@ -148,10 +159,7 @@ public class TypeService {
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws IOException, InterruptedException{
         logger.info(String.format("Getting Type Description for %s.", pid));
-        if(!typeRepository.hasPid(pid) || refresh){
-            logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
-            addType(pid);
-        }
+        checkAdd(pid, refresh);
         return typeRepository.get(pid).serialize();
     }
 
@@ -160,8 +168,27 @@ public class TypeService {
      * @param identifier the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public void getValidation(String pid) {
+    public ObjectNode getValidation(String pid, Boolean refresh) throws IOException, InterruptedException {
+        
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = mapper.createObjectNode();
+        checkAdd(pid, refresh);
+        if(typeRepository.get(pid).getStyle().equals("legacy")){
+            root = legacyValidator.validation(pid);
+        }
+        return root;
+    }
 
+    /**
+     * Helper function avoiding repeated code. Adds a PID to the repo if conditions demand it.
+     * @param identifier the PID to add/refresh in the cache.
+     * @param refresh flag, if type should be refreshed
+     */
+    public void checkAdd(String pid, Boolean refresh) throws IOException, InterruptedException {
+        if(!typeRepository.hasPid(pid) || refresh){
+            logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
+            addType(pid);
+        }
     }
 
     /**

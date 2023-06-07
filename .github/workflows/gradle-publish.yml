@@ -33,9 +33,21 @@ jobs:
           ./gradlew bootJar          
 
       - name: Copy Jar file
-        run: mv build/libs/$(ls build/libs) app.jar
+        run: mv build/libs/$(ls build/libs) dtrtoolkit.jar
 
       - uses: actions/upload-artifact@master
         with:
           name: jar-file
-          path: app.jar
+          path: dtrtoolkit.jar
+          
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish the Docker image
+        run: |
+          docker build -t ghcr.io/fc4e-t4-3/dtr-toolkit .
+          docker push ghcr.io/fc4e-t4-3/dtr-toolkit:latest
