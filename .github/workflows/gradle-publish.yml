@@ -33,9 +33,9 @@ jobs:
           ./gradlew bootJar          
 
       - name: Copy Jar file
-        run: mv build/libs/$(ls build/libs) app.jar
+        run: mv build/libs/$(ls build/libs) dtrtoolkit.jar
 
       - uses: actions/upload-artifact@master
         with:
           name: jar-file
-          path: app.jar
+          path: dtrtoolkit.jar
