@@ -23,9 +23,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
       
       - name: Execute Gradle build
-        run: |
-          chmod +x ./gradlew
-          ./gradlew bootJar          
+        run: ./gradlew bootJar          
 
       - name: Execute Gradle build
         run: |
