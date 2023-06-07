@@ -39,3 +39,15 @@ jobs:
         with:
           name: jar-file
           path: dtrtoolkit.jar
+          
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish the Docker image
+        run: |
+          docker build -t ghcr.io/FC4E-T4-3/dtr-toolkit -f .
+          docker push ghcr.io/FC4E-T4-3/dtr-toolkit:latest
