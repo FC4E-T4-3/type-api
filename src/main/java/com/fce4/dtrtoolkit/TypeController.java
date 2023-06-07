@@ -9,16 +9,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.github.underscore.U;
-import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.logging.Logger;
 
 @RestController
@@ -29,19 +30,17 @@ public class TypeController {
     @Autowired
     TypeService typeService;
 
-
-    @RequestMapping(value = "/v1/desc/**", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/desc/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> desc(@RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header, HttpServletRequest request) throws IOException, InterruptedException {
-        final String url = request.getRequestURL().toString();
-        final String pid = url.split("/api/v1/desc/")[1];
+    public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws IOException, InterruptedException {
+       
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode type = JsonNodeFactory.instance.objectNode();  
-        type =  typeService.getDescription(pid, refresh.orElse(false));
+        type =  typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
 
         if(header.get("Content-Type") != null)
         {
@@ -54,5 +53,22 @@ public class TypeController {
         }
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
+    }
+
+
+    @RequestMapping(value = "/v1/validation/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    /**
+     * Returns the JSON validation schema for a type. 
+     * @param refresh if the requested PID should be refreshed in the cache.
+     */
+    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
+    
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));
+        //Neccessary to clean the JSON string, since Java escapes already escaped characters.
+        String cleaned = node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\");
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+        return new ResponseEntity<String>(cleaned, responseHeaders, HttpStatus.OK);
     }
 }

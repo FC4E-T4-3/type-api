@@ -2,11 +2,14 @@ package com.fce4.dtrtoolkit;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 import org.springframework.stereotype.Component;
 
 @Component
 public class TypeRepository{
+   
+    Logger logger = Logger.getLogger(TypeService.class.getName());
 
     private HashMap<String, TypeEntity> typeCache;
     //Mapping tags to all related types
