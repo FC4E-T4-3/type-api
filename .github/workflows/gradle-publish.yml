@@ -45,7 +45,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: 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
 
       - name: Build and publish the Docker image
         run: |
