@@ -30,8 +30,8 @@ jobs:
       - name: Execute Gradle build
         run: |
           chmod +x ./gradlew
-          ./gradlew bootJar          
-
+          ./gradlew bootJar
+        
       - name: Copy Jar file
         run: mv build/libs/$(ls build/libs) dtrtoolkit.jar
 
@@ -45,7 +45,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.DOCKER_TOKEN_CLASSIC }}
 
       - name: Build and publish the Docker image
         run: |
