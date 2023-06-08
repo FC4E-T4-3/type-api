@@ -1,9 +1,11 @@
 package com.fce4.dtrtoolkit;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
@@ -11,6 +13,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -49,8 +53,14 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
+    @Scheduled(fixedRate = 60, timeUnit = TimeUnit.MINUTES)
     public void refreshRepository() throws IOException, InterruptedException{
         logger.info("Refreshing Cache");
+
+        //Setting a new timestamp, should a new logfile be necessary
+        Date currentDate = new Date(System.currentTimeMillis());
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
+		System.setProperty("timestamp", df.format(currentDate));
 
         Path source = Paths.get(config);
         TomlParseResult result = Toml.parse(source);
