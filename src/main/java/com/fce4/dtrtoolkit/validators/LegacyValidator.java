@@ -56,6 +56,9 @@ public class LegacyValidator extends BaseValidator {
         Boolean isNumeric = false;
         ObjectNode node = mapper.createObjectNode();
         //The properties field is an array, but never meaningfully used beyond the first element. 
+        if(!typeEntity.getContent().has("properties")){
+            return node;
+        }
         JsonNode properties = typeEntity.getContent().get("properties").get(0);
         String datatype = properties.get("dataType").textValue();
         //If a datatype is provided, add it to the root node. Check if it is a numeric type.
@@ -235,9 +238,11 @@ public class LegacyValidator extends BaseValidator {
         JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics");
         Boolean addPropSec = false;
         //Next part is hacky, but there are never more than two elements, and never used in a different way.
-        if(repSemObj.size() == 2){
-            if(repSemObj.get(1).get("subSchemaRelation").textValue().equals("denyAdditionalProperties")){ 
-                addPropSec = true;
+        if(repSemObj != null){
+            if(repSemObj.size() == 2){
+                if(repSemObj.get(1).get("subSchemaRelation").textValue().equals("denyAdditionalProperties")){ 
+                    addPropSec = true;
+                }
             }
         }
 
@@ -252,7 +257,7 @@ public class LegacyValidator extends BaseValidator {
                 else{
                     if(abbreviation.equals(Abbreviation.YES) && !initial){
                         node.set("items", arrayFromObject(propertyNode));
-                        node.withObject("items").put("additionalProperties", false);
+                        //node.withObject("items").put("additionalProperties", false);
                         node.put("type", "array");
                     }
                     else{
@@ -368,24 +373,26 @@ public class LegacyValidator extends BaseValidator {
         }
 
         //Same here, hacky but covers all cases.
-        if(repSemObj.get(0).has("restrict")){
-            String cleaned = repSemObj.get(0).get("restrict").textValue()
-                .replaceAll("\\s+","").replaceAll("\"","");
-            String[] restrictions = cleaned.split(",");
-            for(String i : restrictions){
-                String key = i.split(":")[0];
-                String value = i.split(":")[1];
-                if(NumberUtils.isParsable(value)){
-                    Double valueNumeric = Double.parseDouble(value);
-                    if(valueNumeric % 1 == 0){
-                        node.put(key, Integer.parseInt(value));
+        if(repSemObj != null){
+            if(repSemObj.get(0).has("restrict")){
+                String cleaned = repSemObj.get(0).get("restrict").textValue()
+                    .replaceAll("\\s+","").replaceAll("\"","");
+                String[] restrictions = cleaned.split(",");
+                for(String i : restrictions){
+                    String key = i.split(":")[0];
+                    String value = i.split(":")[1];
+                    if(NumberUtils.isParsable(value)){
+                        Double valueNumeric = Double.parseDouble(value);
+                        if(valueNumeric % 1 == 0){
+                            node.put(key, Integer.parseInt(value));
+                        }
+                        else{
+                            node.put(key, valueNumeric);
+                        }
                     }
                     else{
-                        node.put(key, valueNumeric);
+                        node.put(key, value);
                     }
-                }
-                else{
-                    node.put(key, value);
                 }
             }
         }
@@ -421,8 +428,11 @@ public class LegacyValidator extends BaseValidator {
      * @param typeEntity the TypeEntity in question
      */
     PropRelation getPropRelation(TypeEntity typeEntity) {
-        JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics").get(0);
         PropRelation propRelation = PropRelation.NONE;
+        if(!typeEntity.getContent().has("representationsAndSemantics")){
+            return propRelation;
+        }
+        JsonNode repSemObj = typeEntity.getContent().get("representationsAndSemantics").get(0);
         switch(repSemObj.get("subSchemaRelation").textValue()){ 
             case "denyAdditionalProperties":
                 propRelation = PropRelation.DENY_ADD;
