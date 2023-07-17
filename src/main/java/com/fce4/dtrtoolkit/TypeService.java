@@ -184,7 +184,6 @@ public class TypeService {
      * @throws IOException
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws IOException, InterruptedException{
-        logger.info(String.format("Getting Type Description for %s.", pid));
         checkAdd(pid, refresh);
         return typeRepository.get(pid).serialize();
     }

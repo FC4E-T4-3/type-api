@@ -192,32 +192,36 @@ public class LegacyValidator extends BaseValidator {
      * @param mandatory the ArrayNode to store the mandatory properties, to be passed to next function 
      */
 	ObjectNode processProperties(TypeEntity typeEntity, ArrayNode mandatory) {
-        JsonNode properties = typeEntity.getContent().get("properties");
         ObjectNode propertyNode = mapper.createObjectNode();
-		
-		for(JsonNode i : properties){
-            ObjectNode tempNode = mapper.createObjectNode();
-            TypeEntity tempEntity = typeRepository.get(i.get("identifier").textValue());
-            
-            //Function is recursively called, until only basic types remain.
-            if(tempEntity.getSchema().equals("PID-BasicInfoType")){
-                tempNode = handleBasicType(tempEntity);
-            }
-            else{
-                tempNode = handleInfoType(tempEntity, false);
-            }
-            
-            if(tempEntity.getContent().has("description")){
-                tempNode.put("description", tempEntity.getContent().get("description").textValue());
-            }
 
-            propertyNode.set(i.get("name").textValue(), tempNode);
+        JsonNode properties = typeEntity.getContent().get("properties");
 
-            if(i.has("representationsAndSemantics")){
-                JsonNode repSem = i.get("representationsAndSemantics").get(0);	
-				if(repSem.get("obligation").textValue().equals("Mandatory")){
-					mandatory.add(i.get("name").textValue());
-				}
+        if(properties != null)
+        {
+            for(JsonNode i : properties){
+                ObjectNode tempNode = mapper.createObjectNode();
+                TypeEntity tempEntity = typeRepository.get(i.get("identifier").textValue());
+                
+                //Function is recursively called, until only basic types remain.
+                if(tempEntity.getSchema().equals("PID-BasicInfoType")){
+                    tempNode = handleBasicType(tempEntity);
+                }
+                else{
+                    tempNode = handleInfoType(tempEntity, false);
+                }
+                
+                if(tempEntity.getContent().has("description")){
+                    tempNode.put("description", tempEntity.getContent().get("description").textValue());
+                }
+
+                propertyNode.set(i.get("name").textValue(), tempNode);
+
+                if(i.has("representationsAndSemantics")){
+                    JsonNode repSem = i.get("representationsAndSemantics").get(0);	
+                    if(repSem.get("obligation").textValue().equals("Mandatory")){
+                        mandatory.add(i.get("name").textValue());
+                    }
+                }
             }
         }
 		return propertyNode;
@@ -484,15 +488,18 @@ public class LegacyValidator extends BaseValidator {
      * @param typeEntity the TypeEntity in question
      */
     Boolean firstPropOmitName(TypeEntity typeEntity){
-        JsonNode properties = typeEntity.getContent().get("properties").get(0);
-        if(properties.has("representationsAndSemantics")){
-            JsonNode repSem = properties.get("representationsAndSemantics").get(0);	
-            if(repSem.has("allowOmitSubsidiaries")){
-                if(repSem.get("allowOmitSubsidiaries").textValue().equals("No")){
-                    return false;
+        if(typeEntity.getContent().has("properties")){
+            JsonNode properties = typeEntity.getContent().get("properties").get(0);
+            if(properties.has("representationsAndSemantics")){
+                JsonNode repSem = properties.get("representationsAndSemantics").get(0);	
+                if(repSem.has("allowOmitSubsidiaries")){
+                    if(repSem.get("allowOmitSubsidiaries").textValue().equals("No")){
+                        return false;
+                    }
                 }
             }
         }
+        
         return true;
     }
 

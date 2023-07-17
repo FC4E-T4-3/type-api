@@ -39,7 +39,7 @@ public class TypeController {
      * @param refresh if the requested PID should be refreshed in the cache.
      */
     public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws IOException, InterruptedException {
-       
+        logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode type = JsonNodeFactory.instance.objectNode();  
         type =  typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
@@ -65,7 +65,7 @@ public class TypeController {
      * @param refresh if the requested PID should be refreshed in the cache.
      */
     public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
-    
+        logger.info(String.format("Getting Validation Schema for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));
         //Neccessary to clean the JSON string, since Java escapes already escaped characters.
