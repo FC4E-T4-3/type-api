@@ -1,8 +1,12 @@
 package com.fce4.dtrtoolkit;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
+import java.util.logging.Level;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,9 +25,13 @@ import java.net.URI;
 import java.time.Duration;
 
 import org.tomlj.*;
+import org.typesense.api.*;
+import org.typesense.model.*;
+import org.typesense.resources.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fce4.dtrtoolkit.validators.LegacyValidator;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -32,6 +40,9 @@ import javax.annotation.PostConstruct;
 @Service
 public class TypeService {
 
+    Client typeSenseClient;
+    ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
+    
     @Autowired
     private TypeRepository typeRepository;
 
@@ -43,8 +54,9 @@ public class TypeService {
     Logger logger = Logger.getLogger(TypeService.class.getName());
 
     @PostConstruct
-    public void init() throws IOException, InterruptedException {
+    public void init() throws IOException, InterruptedException, Exception{
         logger.info(new File(".").getAbsolutePath());
+        initTypesense();
         refreshRepository();
     }
 
@@ -54,7 +66,7 @@ public class TypeService {
      * @throws IOException
      */
     @Scheduled(fixedRate = 60, timeUnit = TimeUnit.MINUTES)
-    public void refreshRepository() throws IOException, InterruptedException{
+    public void refreshRepository() throws IOException, InterruptedException, Exception{
         logger.info("Refreshing Cache");
 
         //Setting a new timestamp, should a new logfile be necessary
@@ -92,10 +104,14 @@ public class TypeService {
                 if(types.contains(jsonNode.get("type").textValue())){
                     TypeEntity typeEntity = new TypeEntity(jsonNode, style, uri);
                     typeRepository.save(typeEntity);
+                    typeList.add(typeEntity.serializeSearch());
                     counter+=1;
                 }
             }
             logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
+            ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
+            importDocumentsParameters.action("upsert");
+            typeSenseClient.collections("types").documents().import_(typeList, importDocumentsParameters);
        }
        logger.info("Refreshing Cache successful.");
     }
@@ -206,6 +222,42 @@ public class TypeService {
      * @param identifier the PID to add/refresh in the cache.
      */
     public void search(String query) {
+
+    }
+
+    public void initTypesense() throws Exception{
+        
+        ArrayList<Node> nodes = new ArrayList<>();
+        nodes.add(
+          new Node(
+            "http",       // For Typesense Cloud use https
+            "localhost",  // For Typesense Cloud use xxx.a1.typesense.net
+            "8108"        // For Typesense Cloud use 443
+          )
+        );
+        
+        Configuration configuration = new Configuration(nodes, Duration.ofSeconds(2),"xyz");
+        typeSenseClient = new Client(configuration);
+        typeSenseClient.collections("types").delete();
+        List<Field> fields = new ArrayList<>();
+        fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
+        fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
+        fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
+        fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
+        fields.add(new Field().name("desc").type(FieldTypes.STRING).infix(true));
+
+        CollectionSchema collectionSchema = new CollectionSchema();
+        collectionSchema.name("types").fields(fields).defaultSortingField("date");
+        try{
+            typeSenseClient.collections().create(collectionSchema);        
+        }
+        catch(Exception e){
+            logger.info("Collection already exists");
+        }
+    }
+
+    public void addTypeToList(TypeEntity typeEntity) {
 
     }
 }

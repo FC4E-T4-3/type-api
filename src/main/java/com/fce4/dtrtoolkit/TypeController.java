@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.github.underscore.U;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -30,6 +31,7 @@ public class TypeController {
     @Autowired
     TypeService typeService;
 
+    @CrossOrigin
     @RequestMapping(value = "/v1/desc/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
@@ -55,7 +57,7 @@ public class TypeController {
         return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
     }
 
-
+    @CrossOrigin
     @RequestMapping(value = "/v1/validation/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**

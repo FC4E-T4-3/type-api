@@ -9,9 +9,7 @@ import com.fce4.dtrtoolkit.TypeRepository;
 
 @Component
 public class BaseValidator {
-
     @Autowired
     TypeRepository typeRepository;
     ObjectMapper mapper = new ObjectMapper();
-
 }
