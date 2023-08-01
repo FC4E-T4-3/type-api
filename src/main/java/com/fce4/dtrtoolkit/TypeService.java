@@ -230,7 +230,7 @@ public class TypeService {
         nodes.add(
           new Node(
             "http",       // For Typesense Cloud use https
-            "localhost",  // For Typesense Cloud use xxx.a1.typesense.net
+            "141.5.103.83",  // For Typesense Cloud use xxx.a1.typesense.net
             "8108"        // For Typesense Cloud use 443
           )
         );

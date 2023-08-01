@@ -456,6 +456,7 @@ public class LegacyValidator extends BaseValidator {
         }
         return propRelation;
     } 
+    
     /**
      * Extracts if a TypeEntity allows an abbreviated form
      * @param typeEntity the TypeEntity in question
@@ -477,7 +478,6 @@ public class LegacyValidator extends BaseValidator {
                         break;
                 }
             }
-
         }
         return abbreviation;
     }
@@ -499,7 +499,6 @@ public class LegacyValidator extends BaseValidator {
                 }
             }
         }
-        
         return true;
     }
 
