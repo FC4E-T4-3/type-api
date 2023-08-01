@@ -237,7 +237,9 @@ public class TypeService {
         
         Configuration configuration = new Configuration(nodes, Duration.ofSeconds(2),"xyz");
         typeSenseClient = new Client(configuration);
-        typeSenseClient.collections("types").delete();
+        if(typeSenseClient.collections().retrieve().length > 0) {
+            typeSenseClient.collections("types").delete();
+        }
         List<Field> fields = new ArrayList<>();
         fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
