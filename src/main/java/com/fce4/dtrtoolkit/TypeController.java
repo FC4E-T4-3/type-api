@@ -58,7 +58,7 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/validation/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/schema/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Returns the JSON validation schema for a type. 
@@ -72,5 +72,47 @@ public class TypeController {
         String cleaned = node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\");
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>(cleaned, responseHeaders, HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @RequestMapping(value = "/v1/resolve/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    /**
+     * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
+     * explainable content
+     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
+     */
+    public ResponseEntity<String> resolve(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
+        logger.info(String.format("Resolving ", prefix+"/"+suffix));
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<String>("Resolving", responseHeaders, HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @RequestMapping(value = "/v1/validate/{prefixType}/{suffixType}/{prefixObject}/{suffixObject}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    /**
+     * Given a digital object and a registered type, check if the object can be validated using the schema of the type
+     * explainable content
+     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
+     */
+    public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix) throws IOException, InterruptedException {
+        logger.info(String.format("Resolving ", prefix+"/"+suffix));
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<String>("Validating", responseHeaders, HttpStatus.OK);
+    }
+    
+    @CrossOrigin
+    @RequestMapping(value = "/v1/search/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    /**
+     * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
+     * explainable content
+     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
+     */
+    public ResponseEntity<String> search(@RequestParam String query, @RequestParam Optional<String[]> queryBy, @RequestParam Optional<Boolean> infix) throws IOException, InterruptedException {
+        logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<String>("Searching", responseHeaders, HttpStatus.OK);
     }
 }
