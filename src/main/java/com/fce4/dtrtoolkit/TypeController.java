@@ -3,6 +3,7 @@ package com.fce4.dtrtoolkit;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.MediaType;
@@ -110,9 +111,12 @@ public class TypeController {
      * explainable content
      * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
-    public ResponseEntity<String> search(@RequestParam String query, @RequestParam Optional<String[]> queryBy, @RequestParam Optional<Boolean> infix) throws IOException, InterruptedException {
+    public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,desc") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
+        ArrayList<Object> result = typeService.search(query, queryBy, infix);
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<String>("Searching", responseHeaders, HttpStatus.OK);
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        return new ResponseEntity<String>(result.toString(), responseHeaders, HttpStatus.OK);
     }
 }

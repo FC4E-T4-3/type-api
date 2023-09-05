@@ -1,13 +1,13 @@
 package com.fce4.dtrtoolkit;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 import java.util.logging.Level;
+import java.util.*;
+import java.util.Collections;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,6 @@ import javax.annotation.PostConstruct;
 @Service
 public class TypeService {
 
-    Client typeSenseClient;
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
     
     @Autowired
@@ -49,6 +48,9 @@ public class TypeService {
     @Autowired
     private LegacyValidator legacyValidator;
 
+    @Autowired
+    private TypeSearch typeSearch;
+
     private String config="src/main/config/config.toml";
     
     Logger logger = Logger.getLogger(TypeService.class.getName());
@@ -56,7 +58,6 @@ public class TypeService {
     @PostConstruct
     public void init() throws IOException, InterruptedException, Exception{
         logger.info(new File(".").getAbsolutePath());
-        initTypesense();
         refreshRepository();
     }
 
@@ -115,9 +116,7 @@ public class TypeService {
             logger.warning(e.toString());
             }
         }
-        ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
-        importDocumentsParameters.action("upsert");
-        typeSenseClient.collections("types").documents().import_(typeList, importDocumentsParameters);
+        typeSearch.upsertList(typeList);
         logger.info("Refreshing Cache successful.");
     }
 
@@ -216,41 +215,7 @@ public class TypeService {
      * Search for types in the repository with a query.
      * @param identifier the PID to add/refresh in the cache.
      */
-    public void search(String query) {
-
-    }
-
-    public void initTypesense() throws Exception{
-        
-        ArrayList<Node> nodes = new ArrayList<>();
-        nodes.add(
-          new Node(
-            "http",
-            "141.5.103.83",
-            "8108"
-          )
-        );
-        
-        Configuration configuration = new Configuration(nodes, Duration.ofSeconds(2),"xyz");
-        typeSenseClient = new Client(configuration);
-        if(typeSenseClient.collections().retrieve().length > 0) {
-            typeSenseClient.collections("types").delete();
-        }
-        List<Field> fields = new ArrayList<>();
-        fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
-        fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
-        fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
-        fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
-        fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
-        fields.add(new Field().name("desc").type(FieldTypes.STRING).infix(true));
-
-        CollectionSchema collectionSchema = new CollectionSchema();
-        collectionSchema.name("types").fields(fields).defaultSortingField("date");
-        try{
-            typeSenseClient.collections().create(collectionSchema);        
-        }
-        catch(Exception e){
-            logger.info("Collection already exists");
-        }
+    public ArrayList<Object> search(String query, String[] queryBy, Boolean infix) throws Exception{
+        return typeSearch.search(query, queryBy, infix);
     }
 }

@@ -140,6 +140,7 @@ public class TypeEntity {
         typeSearch.put("desc", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
+        typeSearch.put("content", this.content.toString());
         return typeSearch;
     }
 }
