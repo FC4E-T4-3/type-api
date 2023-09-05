@@ -96,8 +96,8 @@ public class TypeController {
      * explainable content
      * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
-    public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix) throws IOException, InterruptedException {
-        logger.info(String.format("Resolving ", prefix+"/"+suffix));
+    public ResponseEntity<String> validate(@PathVariable String prefixType, @PathVariable String suffixType, @PathVariable String prefixObject, @PathVariable String suffixObject) throws IOException, InterruptedException {
+        logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
         return new ResponseEntity<String>("Validating", responseHeaders, HttpStatus.OK);
     }

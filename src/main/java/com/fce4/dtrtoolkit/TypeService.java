@@ -65,19 +65,22 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    @Scheduled(fixedRate = 60, timeUnit = TimeUnit.MINUTES)
+    @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
     public void refreshRepository() throws IOException, InterruptedException, Exception{
         logger.info("Refreshing Cache");
-
+        typeRepository.clear();
+        typeList.clear();
         //Setting a new timestamp, should a new logfile be necessary
         Date currentDate = new Date(System.currentTimeMillis());
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
 		System.setProperty("timestamp", df.format(currentDate));
 
-        Path source = Paths.get(config);
-        TomlParseResult result = Toml.parse(source);
+        TomlParseResult result = Toml.parse(Paths.get(config));
       
+        HttpClient client = HttpClient.newHttpClient();
+
        for(var i : result.entrySet()){
+        try {
             int counter = 0;
             TomlTable t = TomlTable.class.cast(i.getValue());
             String dtr = i.getKey();
@@ -86,14 +89,13 @@ public class TypeService {
             List<Object> types = t.getArray("types").toList();
             String style = t.getString("style");
 
-            HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                 .GET()
                 .timeout(Duration.ofSeconds(10))
                 .uri(URI.create(uri+suffix))
                 .build();
                 HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
-    
+
             ObjectMapper mapper = new ObjectMapper();
             JsonNode actualObj = mapper.readTree(response.body());
     
@@ -109,17 +111,20 @@ public class TypeService {
                 }
             }
             logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
-            ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
-            importDocumentsParameters.action("upsert");
-            typeSenseClient.collections("types").documents().import_(typeList, importDocumentsParameters);
-       }
-       logger.info("Refreshing Cache successful.");
+        } catch (Exception e) {
+            logger.warning(e.toString());
+            }
+        }
+        ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
+        importDocumentsParameters.action("upsert");
+        typeSenseClient.collections("types").documents().import_(typeList, importDocumentsParameters);
+        logger.info("Refreshing Cache successful.");
     }
 
     /**
      * Adds a single data type to the repository. Either for selective refreshing, or to add valid types not in the configured DTR's.
      * Only works for handle's that forward to a type in a cordra instance.
-     * @param identifier the PID to add/refresh in the cache.
+     * @param pid the PID to add/refresh in the cache.
      * @throws InterruptedException
      * @throws IOException
      */
@@ -137,7 +142,7 @@ public class TypeService {
             HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
 
         /*After the first request, we receive the URL to the type in its DTR. Since we need the full specification, the parameter "?full"
-        needs to be set to true to get all the information necessary. Thus the second request.*/
+        needs to be set to true to get all the information necessary. Thus, the second request.*/
         
         if(!response.headers().map().containsKey("location")){
             logger.info(String.format("Requested Handle %s does not exist", pid));
@@ -163,22 +168,13 @@ public class TypeService {
 			typeEntity.setStyle("legacy");
 		}
         typeRepository.save(typeEntity);
-        addTags(typeEntity);
     
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
     }
 
     /**
-     * Adds the provided in the type to the TypeRepository
-     * @param typeEntity the typeEntity Object whose tags should be added.
-     */
-    public void addTags(TypeEntity typeEntity){
-
-    }
-
-    /**
      * Retrieve the description of a type from the repo.
-     * @param identifier the PID to add/refresh in the cache.
+     * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      * @throws InterruptedException
      * @throws IOException
@@ -190,7 +186,7 @@ public class TypeService {
 
     /**
      * Construct and return the validation schema of a type from the repo.
-     * @param identifier the PID to add/refresh in the cache.
+     * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
     public ObjectNode getValidation(String pid, Boolean refresh) throws IOException, InterruptedException {
@@ -206,7 +202,7 @@ public class TypeService {
 
     /**
      * Helper function avoiding repeated code. Adds a PID to the repo if conditions demand it.
-     * @param identifier the PID to add/refresh in the cache.
+     * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
     public void checkAdd(String pid, Boolean refresh) throws IOException, InterruptedException {
@@ -229,9 +225,9 @@ public class TypeService {
         ArrayList<Node> nodes = new ArrayList<>();
         nodes.add(
           new Node(
-            "http",       // For Typesense Cloud use https
-            "141.5.103.83",  // For Typesense Cloud use xxx.a1.typesense.net
-            "8108"        // For Typesense Cloud use 443
+            "http",
+            "141.5.103.83",
+            "8108"
           )
         );
         
@@ -256,9 +252,5 @@ public class TypeService {
         catch(Exception e){
             logger.info("Collection already exists");
         }
-    }
-
-    public void addTypeToList(TypeEntity typeEntity) {
-
     }
 }
