@@ -21,6 +21,10 @@ public class TypeRepository{
         typeCache.put(typeEntity.getPid(), typeEntity);
     }
 
+    public HashMap<String, TypeEntity> getCache(){
+        return this.typeCache;
+    }
+
     public void clear(){
         this.typeCache.clear();
     }

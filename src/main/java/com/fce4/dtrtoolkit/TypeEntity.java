@@ -4,9 +4,6 @@ import java.util.ArrayList;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 
 public class TypeEntity {
@@ -32,7 +29,6 @@ public class TypeEntity {
         this.style = style;
         this.origin = origin;
         this.name = name;
-        extractFields();
     }
 
     public TypeEntity(JsonNode node, String style, String origin)
@@ -44,7 +40,6 @@ public class TypeEntity {
         this.style = style;
         this.name = node.get("content").get("name").textValue();
         this.origin = origin;
-        extractFields();
     }
 
     public TypeEntity(JsonNode node, String origin)
@@ -56,7 +51,6 @@ public class TypeEntity {
         this.style = "unknown";
         this.name = node.get("content").get("name").textValue();
         this.origin = origin;
-        extractFields();
     }
 
     public String getPid(){
@@ -87,40 +81,29 @@ public class TypeEntity {
         return this.origin;
     }
 
+	public long getDate(){
+		return this.date;
+	}
+
     public void setStyle(String style){
         this.style = style;
     }
 
-    private void extractFields(){
-        //System.out.println(this.content);
+	public void setDescription(String desc){
+		this.desc = desc;
+	}
 
-        this.authors = new ArrayList<String>();
-        this.aliases = new ArrayList<String>();
+    public void setAuthors(ArrayList<String> authors){
+		this.authors = authors;
+	}
 
-        if(getContent().has("description")){
-            this.desc = getContent().get("description").textValue();
-        }
-        if(getContent().has("provenance")){
-            JsonNode provenance = getContent().get("provenance");
-            if(provenance.has("contributors")){
-                for(JsonNode i : provenance.get("contributors")){
-                    this.authors.add(i.get("name").textValue());
-                }
-            }
-            if(provenance.has("creationDate")){
-                String dateString = provenance.get("creationDate").textValue().substring(0, 10);
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-                try{
-                    Date date = format.parse(dateString);
-                    long timestamp = date.getTime() / 1000L;
-                    this.date = timestamp;
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+	public void setAliases(ArrayList<String> aliases){
+		this.aliases = aliases;
+	}
 
+	public void setDate(long date){
+		this.date = date;
+	}
     /**
      * Serializes a TypeObject to a JsonNode object. The setters and getters are required for the mapper.
      * @return a JsonNode representing the TypeObject.

@@ -39,7 +39,7 @@ public class TypeController {
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws IOException, InterruptedException {
+    public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode type = JsonNodeFactory.instance.objectNode();  
@@ -65,7 +65,7 @@ public class TypeController {
      * Returns the JSON validation schema for a type. 
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws IOException, InterruptedException {
+    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws Exception {
         logger.info(String.format("Getting Validation Schema for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));

@@ -12,8 +12,6 @@ import org.typesense.api.*;
 import org.typesense.model.*;
 import org.typesense.resources.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @Component
 public class TypeSearch {
     
@@ -36,7 +34,6 @@ public class TypeSearch {
     }
 
     public void initTypesense() throws Exception{
-        
         if(typeSenseClient.collections().retrieve().length > 0) {
             typeSenseClient.collections("types").delete();
         }
@@ -60,7 +57,12 @@ public class TypeSearch {
         }
     }
 
-    public void upsertList(ArrayList<HashMap<String, Object>> typeList) throws Exception {
+    public void upsertType(HashMap<String, Object> type) throws Exception{
+        typeSenseClient.collections("types").documents().upsert(type);
+        return;
+    } 
+
+    public void upsertList(ArrayList<HashMap<String, Object>> typeList) throws Exception{
         ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
         importDocumentsParameters.action("upsert");
         typeSenseClient.collections("types").documents().import_(typeList, importDocumentsParameters);
@@ -79,6 +81,8 @@ public class TypeSearch {
                                         .infix("always")
                                         .perPage(250)
                                         .page(1);
+        
+        //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
         SearchResult searchResult = typeSenseClient.collections("types").documents().search(searchParameters);
         for(SearchResultHit hit : searchResult.getHits()){
             resultList.add(hit.getDocument().get("content"));

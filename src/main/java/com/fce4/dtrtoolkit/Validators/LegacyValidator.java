@@ -1,4 +1,4 @@
-package com.fce4.dtrtoolkit.validators;
+package com.fce4.dtrtoolkit.Validators;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 

@@ -1,10 +1,10 @@
-[dtr-test]
+[DTR-Test]
 url="https://dtr-test.pidconsortium.net/"
 suffix="objects?query=*"
 style="legacy"
 types=["PID-BasicInfoType","PID-InfoType","KernelInformationProfile"]
 
-[dtr-pit]
+[DTR-PIT]
 url="https://dtr-pit.pidconsortium.net/"
 suffix="objects?query=*"
 style="legacy"

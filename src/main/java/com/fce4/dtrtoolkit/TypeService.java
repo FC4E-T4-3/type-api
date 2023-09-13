@@ -1,13 +1,10 @@
 package com.fce4.dtrtoolkit;
 
+import com.fce4.dtrtoolkit.Extractors.*;
+
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.logging.LogManager;
-import java.util.logging.Level;
 import java.util.*;
-import java.util.Collections;
-
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -15,7 +12,6 @@ import org.springframework.stereotype.Service;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
@@ -25,12 +21,9 @@ import java.net.URI;
 import java.time.Duration;
 
 import org.tomlj.*;
-import org.typesense.api.*;
-import org.typesense.model.*;
-import org.typesense.resources.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fce4.dtrtoolkit.validators.LegacyValidator;
+import com.fce4.dtrtoolkit.Validators.LegacyValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -50,6 +43,9 @@ public class TypeService {
 
     @Autowired
     private TypeSearch typeSearch;
+
+    @Autowired
+    private LegacyExtractor legacyExtractor;
 
     private String config="src/main/config/config.toml";
     
@@ -78,42 +74,23 @@ public class TypeService {
 
         TomlParseResult result = Toml.parse(Paths.get(config));
       
-        HttpClient client = HttpClient.newHttpClient();
+        for(var i : result.entrySet()){
+			try {
+                int counter = 0;
+				TomlTable t = TomlTable.class.cast(i.getValue());
+                String dtr = i.getKey();
+				String url = t.getString("url");
+				String suffix = t.getString("suffix");
+				List<Object> types = t.getArray("types").toList();
+				String style = t.getString("style");
 
-       for(var i : result.entrySet()){
-        try {
-            int counter = 0;
-            TomlTable t = TomlTable.class.cast(i.getValue());
-            String dtr = i.getKey();
-            String uri = t.getString("url");
-            String suffix = t.getString("suffix");
-            List<Object> types = t.getArray("types").toList();
-            String style = t.getString("style");
-
-            HttpRequest request = HttpRequest.newBuilder()
-                .GET()
-                .timeout(Duration.ofSeconds(10))
-                .uri(URI.create(uri+suffix))
-                .build();
-                HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode actualObj = mapper.readTree(response.body());
-    
-            for (JsonNode jsonNode : actualObj.get("results")) {
-                if(!jsonNode.has("type")){
-                    continue;
+                switch(style){
+                    case "legacy":
+                        logger.info(String.format("extracting %s", url));
+                        legacyExtractor.extractTypes(url+suffix, types, dtr);
                 }
-                if(types.contains(jsonNode.get("type").textValue())){
-                    TypeEntity typeEntity = new TypeEntity(jsonNode, style, uri);
-                    typeRepository.save(typeEntity);
-                    typeList.add(typeEntity.serializeSearch());
-                    counter+=1;
-                }
-            }
-            logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
-        } catch (Exception e) {
-            logger.warning(e.toString());
+			} catch (Exception e) {
+            	logger.warning(e.toString());
             }
         }
         typeSearch.upsertList(typeList);
@@ -127,7 +104,7 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    public void addType(String pid) throws IOException, InterruptedException{
+    public void addType(String pid) throws Exception{
         logger.info(String.format("Adding Type %s to the cache", pid));
 
         String uri = "https://hdl.handle.net/" + pid + "?locatt=view:json";
@@ -157,17 +134,18 @@ public class TypeService {
         response = client.send(request,HttpResponse.BodyHandlers.ofString());
 
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(response.body());
-        if(!jsonNode.has("id") || !jsonNode.has("type") || !jsonNode.has("content")){
-            logger.warning(String.format("Requested Handle %s is not a valid type", pid));
-            throw new IOException("Handle is not valid type.");
+        JsonNode root = mapper.readTree(response.body());
+
+        if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
+            TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
+            legacyExtractor.extractFields(typeEntity);
+            typeRepository.save(typeEntity);
+            typeSearch.upsertType(typeEntity.serializeSearch());
         }
-        TypeEntity typeEntity = new TypeEntity(jsonNode, dtrUrl);
-		if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
-			typeEntity.setStyle("legacy");
-		}
-        typeRepository.save(typeEntity);
-    
+        else{
+            logger.warning("PID does not describe a type or is not supported by this application.");
+        }
+
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
     }
 
@@ -178,7 +156,7 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    public JsonNode getDescription(String pid, Boolean refresh) throws IOException, InterruptedException{
+    public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
         checkAdd(pid, refresh);
         return typeRepository.get(pid).serialize();
     }
@@ -188,13 +166,15 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public ObjectNode getValidation(String pid, Boolean refresh) throws IOException, InterruptedException {
+    public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
         
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode root = mapper.createObjectNode();
+        logger.info(Integer.toString(typeRepository.getCache().size()));
         checkAdd(pid, refresh);
         if(typeRepository.get(pid).getStyle().equals("legacy")){
             root = legacyValidator.validation(pid);
+            System.out.println(typeRepository.get(pid));
         }
         return root;
     }
@@ -204,7 +184,7 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public void checkAdd(String pid, Boolean refresh) throws IOException, InterruptedException {
+    public void checkAdd(String pid, Boolean refresh) throws Exception {
         if(!typeRepository.hasPid(pid) || refresh){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
             addType(pid);
