@@ -15,7 +15,7 @@ import org.typesense.resources.*;
 @Component
 public class TypeSearch {
     
-    Logger logger = Logger.getLogger(TypeService.class.getName());
+    Logger logger = Logger.getLogger(TypeSearch.class.getName());
 
     Client typeSenseClient;
 
@@ -24,7 +24,7 @@ public class TypeSearch {
         nodes.add(
         new Node(
             "http",
-            "141.5.103.83",
+            "localhost",
             "8108"
             )
         );   
@@ -60,9 +60,9 @@ public class TypeSearch {
     public void upsertType(HashMap<String, Object> type) throws Exception{
         typeSenseClient.collections("types").documents().upsert(type);
         return;
-    } 
+    }
 
-    public void upsertList(ArrayList<HashMap<String, Object>> typeList) throws Exception{
+    public void upsertList(ArrayList<HashMap<String, Object>> typeList) throws Exception {
         ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
         importDocumentsParameters.action("upsert");
         typeSenseClient.collections("types").documents().import_(typeList, importDocumentsParameters);

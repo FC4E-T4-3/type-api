@@ -13,9 +13,9 @@ public class TypeEntity {
     private String type;
     private String style;
     private String origin;
-    private String name;
-    private long date;
-    private String desc;
+    private String name = "";
+    private long date = 0;
+    private String desc = "";
     private ArrayList<String> authors;
     private ArrayList<String> aliases;
     private JsonNode content;

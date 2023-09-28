@@ -1,6 +1,7 @@
 package com.fce4.dtrtoolkit;
 
 import com.fce4.dtrtoolkit.Extractors.*;
+import com.fce4.dtrtoolkit.Validators.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -23,7 +24,6 @@ import java.time.Duration;
 import org.tomlj.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fce4.dtrtoolkit.Validators.LegacyValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -42,10 +42,15 @@ public class TypeService {
     private LegacyValidator legacyValidator;
 
     @Autowired
+    private EoscValidator eoscValidator;
+
+    @Autowired
     private TypeSearch typeSearch;
 
     @Autowired
     private LegacyExtractor legacyExtractor;
+    @Autowired
+    private EoscExtractor eoscExtractor;
 
     private String config="src/main/config/config.toml";
     
@@ -54,7 +59,7 @@ public class TypeService {
     @PostConstruct
     public void init() throws IOException, InterruptedException, Exception{
         logger.info(new File(".").getAbsolutePath());
-        refreshRepository();
+        //refreshRepository();
     }
 
     /**
@@ -76,7 +81,6 @@ public class TypeService {
       
         for(var i : result.entrySet()){
 			try {
-                int counter = 0;
 				TomlTable t = TomlTable.class.cast(i.getValue());
                 String dtr = i.getKey();
 				String url = t.getString("url");
@@ -84,16 +88,24 @@ public class TypeService {
 				List<Object> types = t.getArray("types").toList();
 				String style = t.getString("style");
 
+                logger.info(String.format("extracting %s", url));
+
                 switch(style){
                     case "legacy":
-                        logger.info(String.format("extracting %s", url));
                         legacyExtractor.extractTypes(url+suffix, types, dtr);
+                        break;
+                    case "eosc":
+                        eoscExtractor.extractTypes(url+suffix, types, dtr);
+                        break;
+                    default:
+                        logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
+                        break;
                 }
 			} catch (Exception e) {
             	logger.warning(e.toString());
             }
         }
-        typeSearch.upsertList(typeList);
+        //typeSearch.upsertList(typeList);
         logger.info("Refreshing Cache successful.");
     }
 
@@ -172,9 +184,12 @@ public class TypeService {
         ObjectNode root = mapper.createObjectNode();
         logger.info(Integer.toString(typeRepository.getCache().size()));
         checkAdd(pid, refresh);
-        if(typeRepository.get(pid).getStyle().equals("legacy")){
-            root = legacyValidator.validation(pid);
-            System.out.println(typeRepository.get(pid));
+        String style = typeRepository.get(pid).getStyle();
+        switch(style){
+            case "legacy":
+                root = legacyValidator.validation(pid);
+            case "eosc":
+                root = eoscValidator.validation(pid);
         }
         return root;
     }
