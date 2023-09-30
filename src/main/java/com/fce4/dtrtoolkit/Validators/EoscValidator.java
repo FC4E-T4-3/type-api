@@ -134,7 +134,7 @@ public class EoscValidator extends BaseValidator{
                         else{
                             propertyNode.put("type", "object");
                             propertyNode.put("additionalProperties", addProps);
-                            propertyNode.putAll(handleInfoType(propertyEntity));
+                            propertyNode.setAll(handleInfoType(propertyEntity));
                         }
                         if(cardinality.equals("1")){
                             required.add(usedName);
