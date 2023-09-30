@@ -510,7 +510,7 @@ public class LegacyValidator extends BaseValidator {
     public ObjectNode validation(String pid) {
         TypeEntity type = typeRepository.get(pid);
         ObjectNode root = mapper.createObjectNode();
-
+        logger.info("HIER");
         if(type.getSchema().equals("PID-BasicInfoType")){
             root = handleBasicType(type);
         }

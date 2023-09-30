@@ -54,11 +54,11 @@ public class LegacyExtractor implements BaseExtractor {
                 TypeEntity typeEntity = createEntity(jsonNode, dtr);
                 extractFields(typeEntity);
                 typeRepository.save(typeEntity);
-                //typeList.add(typeEntity.serializeSearch());
+                typeList.add(typeEntity.serializeSearch());
                 counter+=1;
             }
         }
-        //typeSearch.upsertList(typeList);
+        typeSearch.upsertList(typeList);
         logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
     }
 

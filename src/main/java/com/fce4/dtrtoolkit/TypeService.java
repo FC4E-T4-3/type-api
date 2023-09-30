@@ -188,8 +188,10 @@ public class TypeService {
         switch(style){
             case "legacy":
                 root = legacyValidator.validation(pid);
+                break;
             case "eosc":
                 root = eoscValidator.validation(pid);
+                break;
         }
         return root;
     }
