@@ -1,11 +1,8 @@
 package com.fce4.dtrtoolkit.Validators;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Logger;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -97,71 +94,78 @@ public class EoscValidator extends BaseValidator{
     
         JsonNode properties = components.get("Properties");
         boolean addProps = false;
+        boolean oneOf = false;
         if(components.has("addProps")){
-            addProps = content.get("Components").get("addProps").asBoolean();
+            addProps = components.get("addProps").asBoolean();
         }
-        
+        if(components.has("oneOf")){
+            oneOf = components.get("oneOf").asBoolean();
+        }        
         if(properties.size()==0){
             return node;
         }
 
         node.put("type","object");
+        node.put("additionalProperties", addProps);
         ObjectNode propertyNodes = mapper.createObjectNode();
-        ArrayNode required = mapper.createArrayNode();
 
-        String relations = content.get("Components").get("Relations").textValue();
-
-        switch(relations){
-            case "AND":{
-                for(JsonNode i : properties){
-                    ObjectNode propertyNode = mapper.createObjectNode();
-                    JsonNode typeProperties = i.get("Properties");
-                    String cardinality = typeProperties.get("Cardinality").textValue();
-                    boolean isBasic = true;
-                    String usedName = i.get("Name").textValue();
-                    TypeEntity propertyEntity = typeRepository.get(i.get("Type").textValue());
-                    logger.info(i.get("Type").textValue());
-                    System.out.println(propertyEntity.serialize());
-                    if(propertyEntity.getSchema().equals("InfoType")){
-                        isBasic = false;
-                    }
-
-                    if(cardinality.equals("0 - 1") || cardinality.equals("1")){
-                        if(isBasic){
-                            propertyNode = handleBasicType(propertyEntity);
-                            System.out.println(propertyNode);
-                        }
-                        else{
-                            propertyNode.put("type", "object");
-                            propertyNode.put("additionalProperties", addProps);
-                            propertyNode.setAll(handleInfoType(propertyEntity));
-                        }
-                        if(cardinality.equals("1")){
-                            required.add(usedName);
-                        }
-                    }
-                    else{
-                        logger.info("ARRAY");
-                        propertyNode.put("type", "array");
-                        if(isBasic){
-                            propertyNode.putPOJO("items", handleBasicType(propertyEntity));
-                        }
-                        else{
-                            propertyNode.putPOJO("items", handleInfoType(propertyEntity));
-                        }
-                        if(cardinality.equals("1 - n")){
-                            propertyNode.put("minItems", 1);
-                            required.add(usedName);
-                        }
-
-                    }
-                    propertyNodes.putPOJO(usedName, propertyNode);
-                }
-                if(required.size()>0){
-                    node.putPOJO("required", required);
-                }
-                node.putPOJO("properties", propertyNodes);
+        for(JsonNode i : properties){
+            ObjectNode propertyNode = mapper.createObjectNode();
+            JsonNode typeProperties = i.get("Properties");
+            String cardinality = typeProperties.get("Cardinality").textValue();
+            boolean isBasic = true;
+            String usedName = i.get("Name").textValue();
+            TypeEntity propertyEntity = typeRepository.get(i.get("Type").textValue());
+            
+            if(propertyEntity.getSchema().equals("InfoType")){
+                isBasic = false;
             }
+
+            if(cardinality.equals("0 - 1") || cardinality.equals("1")){
+                if(isBasic){
+                    propertyNode = handleBasicType(propertyEntity);
+                }
+                else{
+                    propertyNode.put("type", "object");
+                    propertyNode.setAll(handleInfoType(propertyEntity));
+                }
+                if(cardinality.equals("1")){
+                    propertyNode.put("required",true);
+                }
+            }
+            else{
+                propertyNode.put("type", "array");
+                if(isBasic){
+                    propertyNode.putPOJO("items", handleBasicType(propertyEntity));
+                }
+                else{
+                    propertyNode.putPOJO("items", handleInfoType(propertyEntity));
+                }
+                if(cardinality.equals("1 - n")){
+                    propertyNode.put("minItems", 1);
+                    propertyNode.put("required",true);
+                }
+            }
+            if(typeProperties.has("Value")){
+                propertyNode.putPOJO("const",typeProperties.get("Value"));
+            }
+            propertyNodes.putPOJO(usedName, propertyNode);
+        }
+
+        if(oneOf){
+            ArrayNode oneOfNode = node.putArray("oneOf");
+            Iterator<Map.Entry<String, JsonNode>> fieldsIterator = propertyNodes.fields();
+            while (fieldsIterator.hasNext()) {
+                ObjectNode tmp = mapper.createObjectNode();
+                ObjectNode tmpProps = mapper.createObjectNode();
+                Map.Entry<String, JsonNode> entry = fieldsIterator.next();
+                tmp.putPOJO(entry.getKey(), entry.getValue());
+                tmpProps.putPOJO("properties", tmp);
+                oneOfNode.addPOJO(tmpProps);
+            }
+        }
+        else{
+            node.putPOJO("properties", propertyNodes);
         }
         return node;
     } 
@@ -169,8 +173,6 @@ public class EoscValidator extends BaseValidator{
     public ObjectNode validation(String pid) {
         TypeEntity type = typeRepository.get(pid);
         ObjectNode root = mapper.createObjectNode();
-
-        System.out.println(type.getContent());
 
         if(type.getSchema().equals("BasicInfoType")){
             root = handleBasicType(type);
