@@ -15,9 +15,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.fce4.dtrtoolkit.TypeEntity;
 
-    /**
-     * The class used to generate validation schemas for legacy types, which are types from the old GWDG DTR's
-     */
+/**
+ * The class used to generate validation schemas for legacy types, which are types from the old GWDG DTR's
+ */
 @Component
 public class LegacyValidator extends BaseValidator {
 
@@ -510,7 +510,7 @@ public class LegacyValidator extends BaseValidator {
     public ObjectNode validation(String pid) {
         TypeEntity type = typeRepository.get(pid);
         ObjectNode root = mapper.createObjectNode();
-
+        logger.info("HIER");
         if(type.getSchema().equals("PID-BasicInfoType")){
             root = handleBasicType(type);
         }

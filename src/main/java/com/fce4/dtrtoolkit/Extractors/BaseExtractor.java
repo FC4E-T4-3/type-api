@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public interface BaseExtractor {
 
     ObjectMapper mapper = new ObjectMapper();
-    ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
     HttpClient client = HttpClient.newHttpClient();
 
     public void extractTypes(String url, List<Object> types, String dtr) throws Exception;

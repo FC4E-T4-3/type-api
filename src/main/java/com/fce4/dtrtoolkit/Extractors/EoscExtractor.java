@@ -22,9 +22,9 @@ import com.fce4.dtrtoolkit.TypeRepository;
 import com.fce4.dtrtoolkit.TypeSearch;
 
 @Component
-public class LegacyExtractor implements BaseExtractor {
+public class EoscExtractor implements BaseExtractor {
 
-    Logger logger = Logger.getLogger(LegacyExtractor.class.getName());
+    Logger logger = Logger.getLogger(EoscExtractor.class.getName());
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
 
     @Autowired
@@ -53,7 +53,7 @@ public class LegacyExtractor implements BaseExtractor {
             if(types.contains(jsonNode.get("type").textValue())){
                 TypeEntity typeEntity = createEntity(jsonNode, dtr);
                 extractFields(typeEntity);
-                typeRepository.save(typeEntity);
+                typeRepository.save(typeEntity);              
                 typeList.add(typeEntity.serializeSearch());
                 counter+=1;
             }
@@ -67,7 +67,7 @@ public class LegacyExtractor implements BaseExtractor {
         String prefix = pid.split("/")[0];
         String type = node.get("type").textValue();
         JsonNode content = node.get("content");
-        String style = "legacy";
+        String style = "eosc";
         String name = node.get("content").get("name").textValue();
         String origin = dtr;
         return new TypeEntity(pid, prefix, type, content, style, origin, name);
