@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.typesense.api.*;
 import org.typesense.model.*;
@@ -19,16 +21,17 @@ public class TypeSearch {
 
     Client typeSenseClient;
 
-    public TypeSearch() throws Exception {
+    @Autowired
+    public TypeSearch(@Value("${typesense.url}") String url, @Value("${typesense.port}") String port, @Value("${typesense.key}") String key) throws Exception {
         ArrayList<Node> nodes = new ArrayList<>();
         nodes.add(
         new Node(
             "http",
-            "localhost",
-            "8108"
+            url,
+            port
             )
         );   
-        Configuration configuration = new Configuration(nodes, Duration.ofSeconds(2),"xyz");
+        Configuration configuration = new Configuration(nodes, Duration.ofSeconds(20),key);
         typeSenseClient = new Client(configuration);
         initTypesense();
     }
