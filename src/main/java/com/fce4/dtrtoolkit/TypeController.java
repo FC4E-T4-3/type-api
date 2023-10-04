@@ -112,9 +112,7 @@ public class TypeController {
     @RequestMapping(value = "/v1/search/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
-     * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
-     * explainable content
-     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
+     * Search for types by name, author and desc by default. can be adjusted by using the queryBy parameters.
      */
     public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,desc") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
