@@ -2,6 +2,13 @@ package com.fce4.dtrtoolkit;
 
 import com.fce4.dtrtoolkit.Extractors.*;
 import com.fce4.dtrtoolkit.Validators.*;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.ValidationMessage;
+
+import jakarta.validation.Valid;
+
+import com.networknt.schema.SpecVersion;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -34,6 +41,7 @@ import javax.annotation.PostConstruct;
 public class TypeService {
 
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
+    ObjectMapper mapper = new ObjectMapper();
     
     @Autowired
     private TypeRepository typeRepository;
@@ -145,7 +153,6 @@ public class TypeService {
             .build();
         response = client.send(request,HttpResponse.BodyHandlers.ofString());
 
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(response.body());
 
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
@@ -180,7 +187,6 @@ public class TypeService {
      */
     public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
         
-        ObjectMapper mapper = new ObjectMapper();
         ObjectNode root = mapper.createObjectNode();
         logger.info(Integer.toString(typeRepository.getCache().size()));
         checkAdd(pid, refresh);
@@ -214,5 +220,22 @@ public class TypeService {
      */
     public ArrayList<Object> search(String query, String[] queryBy, Boolean infix) throws Exception{
         return typeSearch.search(query, queryBy, infix);
+    }
+
+    /**
+     * Validates a JSON object against a type schema.
+     * @param pid The PID of the type against which the object should be validated
+     * @param object The JSON object that is to be validated
+     * @throws Exception
+     */
+    public String validate(String pid, Object object) throws Exception{
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+        JsonSchema schema = factory.getSchema(getValidation(pid, false).toString());
+        JsonNode node = mapper.valueToTree(object);
+        Set<ValidationMessage> errors = schema.validate(node);
+        if(errors.size()>0){
+            return errors.toString();
+        }
+        return "Valid";
     }
 }
