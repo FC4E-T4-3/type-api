@@ -81,6 +81,10 @@ public class TypeEntity {
         return this.origin;
     }
 
+    public String getDescription(){
+        return this.desc;
+    }
+
 	public long getDate(){
 		return this.date;
 	}

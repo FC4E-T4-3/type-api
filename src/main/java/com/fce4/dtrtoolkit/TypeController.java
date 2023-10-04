@@ -4,17 +4,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.github.underscore.U;
+import com.networknt.schema.ValidationMessage;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -76,7 +81,7 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/resolve/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/decipher/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
@@ -90,26 +95,24 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/validate/{prefixType}/{suffixType}/{prefixObject}/{suffixObject}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
-     * explainable content
-     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
-    public ResponseEntity<String> validate(@PathVariable String prefixType, @PathVariable String suffixType, @PathVariable String prefixObject, @PathVariable String suffixObject) throws IOException, InterruptedException {
+    public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix, @RequestBody Object payload) throws Exception {
         logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<String>("Validating", responseHeaders, HttpStatus.OK);
+        System.out.println(payload);
+        String response = typeService.validate(prefix + "/" + suffix, payload);
+        return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
     }
     
     @CrossOrigin
     @RequestMapping(value = "/v1/search/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
-     * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
-     * explainable content
-     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
+     * Search for types by name, author and desc by default. can be adjusted by using the queryBy parameters.
      */
     public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,desc") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
