@@ -122,4 +122,13 @@ public class TypeController {
 
         return new ResponseEntity<String>(result.toString(), responseHeaders, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/v1/refresh/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<String> refresh() throws Exception { 
+
+        typeService.refreshRepository();
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+        return new ResponseEntity<String>("success", responseHeaders, HttpStatus.OK);
+    }
 }
