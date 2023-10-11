@@ -3,9 +3,27 @@ This repository contains the DTR-toolkit. It will provide functionalities to fur
 
 ## Description
 
+### TypeEntitiy
+This Class holds the informations of a digital object.
+>Attributes:    
+```pid``` (String): A unique identifier representing the PID (Persistent Identifier) accociated with the type  
+```prefix``` (Srting):  The prefix of the PID.  
+```type``` (String):    The type of the entity.  
+```style``` (String):    The schema of the entity.
+```origin``` (String):  The origin or source of the entity.
+```name``` (String): Name of the entity.  
+```date``` (long): Timestamp of the creation.  
+```desc``` (String): A description of the object.  
+```authors``` (ArrayList of String): List of authors or contributors assosiated with the object.  
+```aliases``` (ArrayList of String): List of aliases assosiated with the  object.  
+```content``` (JsonNode): JSON object of the entities content.
 
+>Methods:  
+```serialize()```: Serializes a ```TypeEntity``` to a JSON representaion (JsonNode).  
+```serializeSearch()```: Creates a HashMap that represents the  type for search. Including attributes: ```id (pid); name; type; date; description; origin; authors; and content```.
 
 ### Endpoints
+Functionalities are provided via different endpoints.
 
 #### Description Endpoint
 
