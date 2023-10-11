@@ -80,7 +80,7 @@ Validates an object against a registered type.
 
 ```
 URL:  
-/v1/validate/{prefix}/{suffix}/{prefixObject}/{suffixObject}
+/v1/validate/{prefix}/{suffix}/
 
 HTTP METHOD:  
 GET
@@ -88,8 +88,7 @@ GET
 PARAMETER:  
 {prefix}: The prefix of the type identifier.  
 {suffix}: The suffix of the type identifier.  
-{prefixObject}: The prefix part of the object identifier.  
-{suffixObject}: The suffix part of the object identifier.
+Pass a JSON Body that is to be validated against the schema underlying that type.
 ```
 
 
