@@ -19,7 +19,7 @@ This Class holds the informations of a digital object.
 ```content``` (JsonNode): JSON object of the entities content.
 
 >Methods:  
-```serialize()```: Serializes a ```TypeEntity``` to a JSON representaion (JsonNode).  
+```serialize()```: Serializes a ```TypeEntity``` to a JSON representation (JsonNode).  
 ```serializeSearch()```: Creates a HashMap that represents the  type for search. Including attributes: ```id (pid); name; type; date; description; origin; authors; and content```.
 
 ### Endpoints
