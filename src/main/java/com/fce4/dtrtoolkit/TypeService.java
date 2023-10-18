@@ -6,8 +6,6 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 
-import jakarta.validation.Valid;
-
 import com.networknt.schema.SpecVersion;
 
 import java.util.concurrent.TimeUnit;
@@ -177,7 +175,9 @@ public class TypeService {
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
         checkAdd(pid, refresh);
-        return typeRepository.get(pid).serialize();
+        Map<String, Object> type = typeSearch.get(pid, "types");
+        TypeEntity typeEntity = new TypeEntity(type);
+        return typeEntity.serialize();
     }
 
     /**
