@@ -1,11 +1,14 @@
 package com.fce4.dtrtoolkit;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,9 +40,18 @@ public class TypeSearch {
     }
 
     public void initTypesense() throws Exception{
-        if(typeSenseClient.collections().retrieve().length > 0) {
+        initTypes();
+    }
+
+    public void initTypes() throws Exception{
+        try{
+            typeSenseClient.collections("types").retrieve();
             typeSenseClient.collections("types").delete();
         }
+        catch(Exception e) {
+            logger.info("Collection types did not exist yet. Creating...");
+        }
+
         List<Field> fields = new ArrayList<>();
         fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
@@ -47,8 +59,6 @@ public class TypeSearch {
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("desc").type(FieldTypes.STRING).infix(true));
-        fields.add(new Field().name("content").type(FieldTypes.STRING).infix(true));
-
 
         CollectionSchema collectionSchema = new CollectionSchema();
         collectionSchema.name("types").fields(fields).defaultSortingField("date");
@@ -98,5 +108,19 @@ public class TypeSearch {
             }
         }
         return resultList;
+    }
+
+    public Map<String, Object> get(String pid, String collection) throws Exception {
+       return this.typeSenseClient.collections(collection).documents(URLEncoder.encode(pid, StandardCharsets.UTF_8.toString())).retrieve();
+    }
+
+    public boolean has(String pid, String collection) throws IOException{
+        try{
+            this.typeSenseClient.collections(collection).documents(URLEncoder.encode(pid, StandardCharsets.UTF_8.toString())).retrieve();
+            return true;
+        }
+        catch(Exception e) {
+            return false;
+        }
     }
 }

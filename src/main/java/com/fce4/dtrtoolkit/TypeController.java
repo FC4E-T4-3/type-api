@@ -47,8 +47,14 @@ public class TypeController {
     public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        JsonNode type = JsonNodeFactory.instance.objectNode();  
-        type =  typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
+        JsonNode type = JsonNodeFactory.instance.objectNode(); 
+        
+        try{
+            type = typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
+        }
+        catch(Exception e){
+            return new ResponseEntity<String>(e.getMessage().toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+        }
 
         if(header.get("Content-Type") != null)
         {
@@ -104,8 +110,13 @@ public class TypeController {
         logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
         System.out.println(payload);
-        String response = typeService.validate(prefix + "/" + suffix, payload);
-        return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
+        try{
+            String response = typeService.validate(prefix + "/" + suffix, payload);
+            return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
+        }
+        catch(Exception e){
+            return new ResponseEntity<String>(e.getMessage().toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+        }
     }
     
     @CrossOrigin

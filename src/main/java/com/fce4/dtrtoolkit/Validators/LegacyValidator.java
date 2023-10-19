@@ -154,7 +154,7 @@ public class LegacyValidator extends BaseValidator {
      * Generates the validation schema for a single InfoType. KIP's are handled here as well, since only some conditions are different.
      * @param type the TypeEntity of which the schema is to be created
      */
-    public ObjectNode handleInfoType(TypeEntity typeEntity, Boolean initial){
+    public ObjectNode handleInfoType(TypeEntity typeEntity, Boolean initial) throws Exception{
        
         ArrayNode mandatory = mapper.createArrayNode();
 		Abbreviation abbreviation = Abbreviation.NO;
@@ -191,7 +191,7 @@ public class LegacyValidator extends BaseValidator {
      * @param typeEntity the TypeEntity of which the schema is to be created
      * @param mandatory the ArrayNode to store the mandatory properties, to be passed to next function 
      */
-	ObjectNode processProperties(TypeEntity typeEntity, ArrayNode mandatory) {
+	ObjectNode processProperties(TypeEntity typeEntity, ArrayNode mandatory) throws Exception{
         ObjectNode propertyNode = mapper.createObjectNode();
 
         JsonNode properties = typeEntity.getContent().get("properties");
@@ -200,7 +200,7 @@ public class LegacyValidator extends BaseValidator {
         {
             for(JsonNode i : properties){
                 ObjectNode tempNode = mapper.createObjectNode();
-                TypeEntity tempEntity = typeRepository.get(i.get("identifier").textValue());
+                TypeEntity tempEntity = new TypeEntity(typeSearch.get(i.get("identifier").textValue(), "types"));
                 
                 //Function is recursively called, until only basic types remain.
                 if(tempEntity.getSchema().equals("PID-BasicInfoType")){
@@ -507,10 +507,9 @@ public class LegacyValidator extends BaseValidator {
      * moves foward with the validation. BasicInfoTypes get generated directly, InfoTypes recursively.
      * @param type the TypeEntity of which the schema is to be created
      */
-    public ObjectNode validation(String pid) {
-        TypeEntity type = typeRepository.get(pid);
+    public ObjectNode validation(String pid) throws Exception {
+        TypeEntity type = new TypeEntity(typeSearch.get(pid, "types"));
         ObjectNode root = mapper.createObjectNode();
-        logger.info("HIER");
         if(type.getSchema().equals("PID-BasicInfoType")){
             root = handleBasicType(type);
         }

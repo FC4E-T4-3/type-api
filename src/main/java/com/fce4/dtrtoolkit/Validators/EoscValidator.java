@@ -83,7 +83,7 @@ public class EoscValidator extends BaseValidator{
         return node;
     }
 
-    public ObjectNode handleInfoType(TypeEntity typeEntity) {
+    public ObjectNode handleInfoType(TypeEntity typeEntity) throws Exception {
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
 
@@ -115,7 +115,7 @@ public class EoscValidator extends BaseValidator{
             String cardinality = typeProperties.get("Cardinality").textValue();
             boolean isBasic = true;
             String usedName = i.get("Name").textValue();
-            TypeEntity propertyEntity = typeRepository.get(i.get("Type").textValue());
+            TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
             
             if(propertyEntity.getSchema().equals("InfoType")){
                 isBasic = false;
@@ -170,8 +170,8 @@ public class EoscValidator extends BaseValidator{
         return node;
     } 
     
-    public ObjectNode validation(String pid) {
-        TypeEntity type = typeRepository.get(pid);
+    public ObjectNode validation(String pid) throws Exception{
+        TypeEntity type = new TypeEntity(typeSearch.get(pid, "types"));
         ObjectNode root = mapper.createObjectNode();
 
         if(type.getSchema().equals("BasicInfoType")){

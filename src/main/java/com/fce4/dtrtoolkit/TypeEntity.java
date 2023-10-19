@@ -2,14 +2,16 @@ package com.fce4.dtrtoolkit;
 
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
+import java.util.Map;
 
 public class TypeEntity {
     
     private String pid;
-    private String prefix;
     private String type;
     private String style;
     private String origin;
@@ -23,7 +25,6 @@ public class TypeEntity {
     public TypeEntity(String pid, String prefix, String type, JsonNode content, String style, String origin, String name)
     {
         this.pid = pid;
-        this.prefix = prefix;
         this.type = type;
         this.content = content;
         this.style = style;
@@ -34,7 +35,6 @@ public class TypeEntity {
     public TypeEntity(JsonNode node, String style, String origin)
     {
         this.pid = node.get("id").textValue();
-        this.prefix = pid.split("/")[0];
         this.type = node.get("type").textValue();
         this.content = node.get("content");
         this.style = style;
@@ -45,7 +45,6 @@ public class TypeEntity {
     public TypeEntity(JsonNode node, String origin)
     {
         this.pid = node.get("id").textValue();
-        this.prefix = pid.split("/")[0];
         this.type = node.get("type").textValue();
         this.content = node.get("content");
         this.style = "unknown";
@@ -53,12 +52,22 @@ public class TypeEntity {
         this.origin = origin;
     }
 
-    public String getPid(){
-        return this.pid;
+    public TypeEntity(Map<String, Object> node)
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        this.pid = node.get("id").toString();
+        this.type = node.get("type").toString();
+        this.content = mapper.valueToTree(node.get("content"));
+        this.authors = (ArrayList<String>) node.get("authors");
+        this.date = Long.parseLong(node.get("date").toString());
+        this.desc = node.get("desc").toString();
+        this.style = node.get("style").toString();
+        this.name = node.get("name").toString();
+        this.origin = node.get("origin").toString();
     }
 
-    public String getPrefix(){
-        return this.prefix;
+    public String getPid(){
+        return this.pid;
     }
 
     public String getSchema(){
@@ -118,7 +127,9 @@ public class TypeEntity {
         return node;
     }
 
-    public HashMap<String,Object> serializeSearch(){
+    public HashMap<String,Object> serializeSearch() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
         HashMap<String, Object> typeSearch = new HashMap<>();
         typeSearch.put("id", this.pid);
         typeSearch.put("name", this.name);
@@ -127,7 +138,8 @@ public class TypeEntity {
         typeSearch.put("desc", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
-        typeSearch.put("content", this.content.toString());
+        typeSearch.put("content", this.content);
+        typeSearch.put("style", this.style);
         return typeSearch;
     }
 }
