@@ -72,7 +72,7 @@ public class LegacyExtractor implements BaseExtractor {
         ArrayList<String> authors = new ArrayList<String>();
 
         if(type.getContent().has("description")){
-           type.setDescription(type.getContent().get("description").textValue());
+           type.setDesc(type.getContent().get("description").textValue());
         }
         if(type.getContent().has("provenance")){
             JsonNode provenance = type.getContent().get("provenance");

@@ -158,7 +158,7 @@ public class LegacyValidator extends BaseValidator {
        
         ArrayNode mandatory = mapper.createArrayNode();
 		Abbreviation abbreviation = Abbreviation.NO;
-		if(!typeEntity.getSchema().equals("KernelInformationProfile")){
+		if(!typeEntity.getType().equals("KernelInformationProfile")){
 			abbreviation = getAbbreviation(typeEntity);
 		}
 
@@ -203,7 +203,7 @@ public class LegacyValidator extends BaseValidator {
                 TypeEntity tempEntity = new TypeEntity(typeSearch.get(i.get("identifier").textValue(), "types"));
                 
                 //Function is recursively called, until only basic types remain.
-                if(tempEntity.getSchema().equals("PID-BasicInfoType")){
+                if(tempEntity.getType().equals("PID-BasicInfoType")){
                     tempNode = handleBasicType(tempEntity);
                 }
                 else{
@@ -510,7 +510,7 @@ public class LegacyValidator extends BaseValidator {
     public ObjectNode validation(String pid) throws Exception {
         TypeEntity type = new TypeEntity(typeSearch.get(pid, "types"));
         ObjectNode root = mapper.createObjectNode();
-        if(type.getSchema().equals("PID-BasicInfoType")){
+        if(type.getType().equals("PID-BasicInfoType")){
             root = handleBasicType(type);
         }
         else{
