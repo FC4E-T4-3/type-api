@@ -1,5 +1,6 @@
 package com.fce4.dtrtoolkit;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -8,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -112,5 +112,15 @@ public class TypeSearch {
 
     public Map<String, Object> get(String pid, String collection) throws Exception {
        return this.typeSenseClient.collections(collection).documents(URLEncoder.encode(pid, StandardCharsets.UTF_8.toString())).retrieve();
+    }
+
+    public boolean has(String pid, String collection) throws IOException{
+        try{
+            this.typeSenseClient.collections(collection).documents(URLEncoder.encode(pid, StandardCharsets.UTF_8.toString())).retrieve();
+            return true;
+        }
+        catch(Exception e) {
+            return false;
+        }
     }
 }

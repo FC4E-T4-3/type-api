@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fce4.dtrtoolkit.TypeEntity;
-import com.fce4.dtrtoolkit.TypeRepository;
 import com.fce4.dtrtoolkit.TypeSearch;
 
 @Component
@@ -26,9 +25,6 @@ public class LegacyExtractor implements BaseExtractor {
 
     Logger logger = Logger.getLogger(LegacyExtractor.class.getName());
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
-
-    @Autowired
-    private TypeRepository typeRepository;
 
     @Autowired
     private TypeSearch typeSearch;
@@ -53,7 +49,6 @@ public class LegacyExtractor implements BaseExtractor {
             if(types.contains(jsonNode.get("type").textValue())){
                 TypeEntity typeEntity = createEntity(jsonNode, dtr);
                 extractFields(typeEntity);
-                typeRepository.save(typeEntity);
                 typeList.add(typeEntity.serializeSearch());
                 counter+=1;
             }

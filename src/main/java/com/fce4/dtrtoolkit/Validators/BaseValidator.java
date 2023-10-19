@@ -4,11 +4,12 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.fce4.dtrtoolkit.TypeRepository;
+import com.fce4.dtrtoolkit.TypeSearch;
 
 @Component
 public class BaseValidator {
     @Autowired
-    TypeRepository typeRepository;
+    TypeSearch typeSearch;
+    
     ObjectMapper mapper = new ObjectMapper();
 }

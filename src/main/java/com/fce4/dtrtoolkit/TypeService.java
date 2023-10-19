@@ -19,6 +19,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Paths;
+import java.security.InvalidParameterException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.io.File;
@@ -40,9 +41,6 @@ public class TypeService {
 
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
     ObjectMapper mapper = new ObjectMapper();
-    
-    @Autowired
-    private TypeRepository typeRepository;
 
     @Autowired
     private LegacyValidator legacyValidator;
@@ -76,7 +74,6 @@ public class TypeService {
     @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
     public void refreshRepository() throws IOException, InterruptedException, Exception{
         logger.info("Refreshing Cache");
-        typeRepository.clear();
         typeList.clear();
         //Setting a new timestamp, should a new logfile be necessary
         Date currentDate = new Date(System.currentTimeMillis());
@@ -139,7 +136,7 @@ public class TypeService {
         needs to be set to true to get all the information necessary. Thus, the second request.*/
         
         if(!response.headers().map().containsKey("location")){
-            logger.info(String.format("Requested Handle %s does not exist", pid));
+            logger.warning(String.format("Requested Handle %s does not exist", pid));
             throw new IOException(String.format("Requested Handle %s does not exist.", pid));
         }
         String dtrUrl = response.headers().map().get("location").get(0);
@@ -156,7 +153,6 @@ public class TypeService {
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
             legacyExtractor.extractFields(typeEntity);
-            typeRepository.save(typeEntity);
             typeSearch.upsertType(typeEntity.serializeSearch());
         }
         else{
@@ -175,6 +171,7 @@ public class TypeService {
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
         checkAdd(pid, refresh);
+        logger.info("HIER");
         Map<String, Object> type = typeSearch.get(pid, "types");
         TypeEntity typeEntity = new TypeEntity(type);
         return typeEntity.serialize();
@@ -188,9 +185,9 @@ public class TypeService {
     public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
         
         ObjectNode root = mapper.createObjectNode();
-        logger.info(Integer.toString(typeRepository.getCache().size()));
         checkAdd(pid, refresh);
-        String style = typeRepository.get(pid).getStyle();
+        TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
+        String style = typeEntity.getStyle();
         switch(style){
             case "legacy":
                 root = legacyValidator.validation(pid);
@@ -208,9 +205,9 @@ public class TypeService {
      * @param refresh flag, if type should be refreshed
      */
     public void checkAdd(String pid, Boolean refresh) throws Exception {
-        if(!typeRepository.hasPid(pid) || refresh){
+        if(!typeSearch.has(pid, "types") || refresh){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
-            addType(pid);
+            addType(pid);            
         }
     }
 
