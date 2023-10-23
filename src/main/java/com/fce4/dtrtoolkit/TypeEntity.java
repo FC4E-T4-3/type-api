@@ -19,6 +19,7 @@ public class TypeEntity {
     private ArrayList<String> authors;
     private ArrayList<String> aliases;
     private JsonNode content;
+    private String unit = "None";
 
     public TypeEntity(String pid, String prefix, String type, JsonNode content, String style, String origin, String name) {
         this.pid = pid;
@@ -54,10 +55,13 @@ public class TypeEntity {
         this.content = mapper.valueToTree(node.get("content"));
         this.authors = (ArrayList<String>) node.get("authors");
         this.date = Long.parseLong(node.get("date").toString());
-        this.desc = node.get("desc").toString();
+        this.desc = node.get("description").toString();
         this.style = node.get("style").toString();
         this.name = node.get("name").toString();
         this.origin = node.get("origin").toString();
+        if(node.containsKey("unit")){
+            this.unit = node.get("unit").toString();
+        }
     }
 
 
@@ -141,6 +145,13 @@ public class TypeEntity {
         this.content = content;
     }
 
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public String getUnit() {
+        return this.unit;
+    }
 
     /**
      * Serializes a TypeObject to a JsonNode object. The setters and getters are required for the mapper.
@@ -158,11 +169,12 @@ public class TypeEntity {
         typeSearch.put("name", this.name);
         typeSearch.put("type", this.type);
         typeSearch.put("date", this.date);
-        typeSearch.put("desc", this.desc);
+        typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
         typeSearch.put("content", this.content);
         typeSearch.put("style", this.style);
+        typeSearch.put("unit", this.unit);
         return typeSearch;
     }
 }

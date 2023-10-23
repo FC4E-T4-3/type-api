@@ -14,10 +14,10 @@ public class UnitEntity {
     private String name = "";
     private long date = 0;
     private String desc = "";
-    private ArrayList<String> authors;
-    private String unitSymbol;
-    private String quantity;
-    private String quantitySymbol;
+    private ArrayList<String> authors = new ArrayList<String>();
+    private String unitSymbol = "";
+    private String quantity = "";
+    private String quantitySymbol = "";
 
     public UnitEntity(String pid, String type, String origin, String name, long date, 
                         String desc, ArrayList<String> authors, String unitSymbol, 
@@ -40,7 +40,7 @@ public class UnitEntity {
         this.origin = unit.get("origin").toString();
         this.name = unit.get("name").toString();
         this.date = Long.parseLong(unit.get("date").toString());
-        this.desc = unit.get("desc").toString();
+        this.desc = unit.get("description").toString();
         this.authors = (ArrayList<String>) unit.get("authors");
         this.unitSymbol = unit.get("unitSymbol").toString();
         this.quantity = unit.get("quantity").toString();
@@ -144,12 +144,18 @@ public class UnitEntity {
         typeSearch.put("name", this.name);
         typeSearch.put("type", this.type);
         typeSearch.put("date", this.date);
-        typeSearch.put("desc", this.desc);
+        typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
-        typeSearch.put("unitSymbol", this.unitSymbol);
-        typeSearch.put("quantity", this.quantity);
-        typeSearch.put("quantitySymbol", this.quantitySymbol);
+        if(!"unitSymbol".equals("")){
+            typeSearch.put("unitSymbol", this.unitSymbol);
+        }
+        if(!"quantity".equals("")){
+            typeSearch.put("quantity", this.quantity);
+        }
+        if(!"quantitySymbol".equals("")){
+            typeSearch.put("quantitySymbol", this.quantitySymbol);
+        }
         return typeSearch;
     }
 }

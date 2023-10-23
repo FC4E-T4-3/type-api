@@ -109,9 +109,9 @@ public class TypeController {
     /**
      * Search for types by name, author and desc by default. can be adjusted by using the queryBy parameters.
      */
-    public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,desc") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+    public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
-        ArrayList<Object> result = typeService.search(query, queryBy, infix);
+        ArrayList<Object> result = typeService.search(query, queryBy, "types", infix);
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 

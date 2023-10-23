@@ -9,6 +9,7 @@ import java.util.Date;
 @SpringBootApplication
 @ComponentScan("com.fce4.dtrtoolkit.Validators")
 @ComponentScan("com.fce4.dtrtoolkit.Extractors")
+@ComponentScan("com.fce4.dtrtoolkit.Controllers")
 @ComponentScan("com.fce4.dtrtoolkit")
 @EnableScheduling
 

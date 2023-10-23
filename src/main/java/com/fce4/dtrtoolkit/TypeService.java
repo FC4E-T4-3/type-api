@@ -86,10 +86,14 @@ public class TypeService {
 			try {
 				TomlTable t = TomlTable.class.cast(i.getValue());
                 String dtr = i.getKey();
+                ArrayList<Object> units = new ArrayList<Object>();
 				String url = t.getString("url");
 				String suffix = t.getString("suffix");
 				List<Object> types = t.getArray("types").toList();
 				String style = t.getString("style");
+                if(t.contains("units")){
+                    units = new ArrayList<Object>(t.getArray("units").toList());
+                }
 
                 logger.info(String.format("extracting %s", url));
 
@@ -98,7 +102,7 @@ public class TypeService {
                         legacyExtractor.extractTypes(url+suffix, types, dtr);
                         break;
                     case "eosc":
-                        eoscExtractor.extractTypes(url+suffix, types, dtr);
+                        eoscExtractor.extractTypes(url+suffix, types, units, dtr);
                         break;
                     default:
                         logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
@@ -108,7 +112,6 @@ public class TypeService {
             	logger.warning(e.toString());
             }
         }
-        //typeSearch.upsertList(typeList);
         logger.info("Refreshing Cache successful.");
     }
 
@@ -153,7 +156,7 @@ public class TypeService {
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
             legacyExtractor.extractFields(typeEntity);
-            typeSearch.upsertType(typeEntity.serializeSearch());
+            typeSearch.upsertEntry(typeEntity.serializeSearch(), "types");
         }
         else{
             logger.warning("PID does not describe a type or is not supported by this application.");
@@ -171,10 +174,16 @@ public class TypeService {
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
         checkAdd(pid, refresh);
-        logger.info("HIER");
         Map<String, Object> type = typeSearch.get(pid, "types");
         TypeEntity typeEntity = new TypeEntity(type);
         return typeEntity.serialize();
+    }
+
+    public JsonNode getUnit(String pid, Boolean refresh) throws Exception {
+        //checkAdd(pid, refresh);
+        Map<String, Object> unit = typeSearch.get(pid, "units");
+        UnitEntity unitEntity = new UnitEntity(unit);
+        return unitEntity.serialize();
     }
 
     /**
@@ -215,8 +224,8 @@ public class TypeService {
      * Search for types in the repository with a query.
      * @param identifier the PID to add/refresh in the cache.
      */
-    public ArrayList<Object> search(String query, String[] queryBy, Boolean infix) throws Exception{
-        return typeSearch.search(query, queryBy, infix);
+    public ArrayList<Object> search(String query, String[] queryBy, String collection, Boolean infix) throws Exception{
+        return typeSearch.searchSimple(query, queryBy, collection, infix);
     }
 
     /**
