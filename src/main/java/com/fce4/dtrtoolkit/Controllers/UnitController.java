@@ -36,11 +36,21 @@ public class UnitController {
     @CrossOrigin
     @RequestMapping(value = "/v1/units/", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<String> getAllUnits(@PathVariable String prefix, @PathVariable String suffix){
-        logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
+    public ResponseEntity<Object> getAllUnits(@RequestParam(defaultValue = "false") Boolean onlyIDs) throws Exception{
+        logger.info(String.format("Retrieving all units..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
 
-        return new ResponseEntity<String>("GetUnit", responseHeaders, HttpStatus.OK);
+        ArrayList<Object> result = typeService.search("*", new String[]{"name"}, "units", false);
+        if(onlyIDs){
+            ArrayList<Object> tmp = new ArrayList<Object>();
+            for(Object o : result){
+                JsonNode node = mapper.readTree(o.toString());
+                tmp.add(node.get("id"));
+                //System.out.println(node.get("id"));
+            }
+            result = tmp;
+        }
+        return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
     @CrossOrigin
