@@ -17,12 +17,15 @@ import org.typesense.api.*;
 import org.typesense.model.*;
 import org.typesense.resources.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Component
 public class TypeSearch {
     
     Logger logger = Logger.getLogger(TypeSearch.class.getName());
 
     Client typeSenseClient;
+    ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     public TypeSearch(@Value("${typesense.url}") String url, @Value("${typesense.port}") String port, @Value("${typesense.key}") String key) throws Exception {
@@ -118,7 +121,6 @@ public class TypeSearch {
      * @param identifier the PID to add/refresh in the cache.
      */
     public ArrayList<Object> searchSimple(String query, String[] queryBy, String collection, Boolean infix) throws Exception{
-
         ArrayList<Object> resultList = new ArrayList<Object> ();
         SearchParameters searchParameters = new SearchParameters()
                                         .q(query)
@@ -129,14 +131,15 @@ public class TypeSearch {
         
         //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
         SearchResult searchResult = typeSenseClient.collections(collection).documents().search(searchParameters);
+
         for(SearchResultHit hit : searchResult.getHits()){
-            resultList.add(hit.getDocument().get("content"));
+            resultList.add(mapper.writeValueAsString(hit.getDocument()));
         }
         while(searchResult.getHits().size() > 0){
             searchParameters.setPage(searchParameters.getPage()+1);
             searchResult = typeSenseClient.collections(collection).documents().search(searchParameters);
             for(SearchResultHit hit : searchResult.getHits()){
-                resultList.add(hit.getDocument().get("content"));
+                resultList.add(mapper.writeValueAsString(hit.getDocument()));
             }
         }
         return resultList;

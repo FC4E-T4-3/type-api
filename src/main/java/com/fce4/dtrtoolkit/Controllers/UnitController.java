@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fce4.dtrtoolkit.TypeService;
 import com.github.underscore.U;
@@ -30,6 +31,7 @@ public class UnitController {
     TypeService typeService;
     
     Logger logger = Logger.getLogger(UnitController.class.getName());
+    ObjectMapper mapper = new ObjectMapper();
 
     @CrossOrigin
     @RequestMapping(value = "/v1/units/", method = RequestMethod.GET)
@@ -44,11 +46,12 @@ public class UnitController {
     @CrossOrigin
     @RequestMapping(value = "/v1/units/search", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue = "true") Boolean infix) throws Exception {
         logger.info("Searching for...");
         final HttpHeaders responseHeaders = new HttpHeaders();
         ArrayList<Object> result = typeService.search(query, queryBy, "units", infix);
-        return new ResponseEntity<String>(result.toString(), responseHeaders, HttpStatus.OK);
+
+        return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
     @CrossOrigin
