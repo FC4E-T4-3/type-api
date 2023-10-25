@@ -147,11 +147,10 @@ public class UnitEntity {
         typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
+        typeSearch.put("quantity", this.quantity);
+        
         if(!"unitSymbol".equals("")){
             typeSearch.put("unitSymbol", this.unitSymbol);
-        }
-        if(!"quantity".equals("")){
-            typeSearch.put("quantity", this.quantity);
         }
         if(!"quantitySymbol".equals("")){
             typeSearch.put("quantitySymbol", this.quantitySymbol);

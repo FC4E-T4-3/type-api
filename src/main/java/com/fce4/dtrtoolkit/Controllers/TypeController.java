@@ -3,9 +3,13 @@ package com.fce4.dtrtoolkit.Controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +35,7 @@ import com.fce4.dtrtoolkit.TypeService;
 public class TypeController {
 
     Logger logger = Logger.getLogger(TypeController.class.getName());
+    ObjectMapper mapper = new ObjectMapper();
     
     @Autowired
     TypeService typeService;
@@ -109,12 +114,19 @@ public class TypeController {
     /**
      * Search for types by name, author and desc by default. can be adjusted by using the queryBy parameters.
      */
-    public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
-        ArrayList<Object> result = typeService.search(query, queryBy, "types", infix);
+        filterBy.remove("query");
+        filterBy.remove("queryBy");
+        filterBy.remove("infix");
         final HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        return new ResponseEntity<String>(result.toString(), responseHeaders, HttpStatus.OK);
+        try{
+            ArrayList<Object> result = typeService.search(query, queryBy, filterBy, "types", infix);
+            return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
+        }
+        catch(Exception e){
+            return new ResponseEntity<Object>("FilterBy or QueryBy field does not exist or is not indexed.", responseHeaders, HttpStatus.NOT_FOUND);
+        }
     }
 }

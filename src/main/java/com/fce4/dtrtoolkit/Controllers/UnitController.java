@@ -1,6 +1,8 @@
 package com.fce4.dtrtoolkit.Controllers;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -40,7 +42,7 @@ public class UnitController {
         logger.info(String.format("Retrieving all units..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
 
-        ArrayList<Object> result = typeService.search("*", new String[]{"name"}, "units", false);
+        ArrayList<Object> result = typeService.search("*", new String[]{"name"}, Collections.emptyMap(), "units", false);
         if(onlyIDs){
             ArrayList<Object> tmp = new ArrayList<Object>();
             for(Object o : result){
@@ -56,12 +58,20 @@ public class UnitController {
     @CrossOrigin
     @RequestMapping(value = "/v1/units/search", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue = "true") Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
         logger.info("Searching for...");
         final HttpHeaders responseHeaders = new HttpHeaders();
-        ArrayList<Object> result = typeService.search(query, queryBy, "units", infix);
+        filterBy.remove("query");
+        filterBy.remove("queryBy");
+        filterBy.remove("infix");
+        try{
+            ArrayList<Object> result = typeService.search(query, queryBy, filterBy, "units", infix);
+            return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
+        }
+        catch(Exception e){
+            return new ResponseEntity<Object>("FilterBy or QueryBy field does not exist or is not indexed.", responseHeaders, HttpStatus.NOT_FOUND);
+        }
 
-        return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
     @CrossOrigin

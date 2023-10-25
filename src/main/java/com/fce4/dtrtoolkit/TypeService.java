@@ -224,8 +224,8 @@ public class TypeService {
      * Search for types in the repository with a query.
      * @param identifier the PID to add/refresh in the cache.
      */
-    public ArrayList<Object> search(String query, String[] queryBy, String collection, Boolean infix) throws Exception{
-        return typeSearch.searchSimple(query, queryBy, collection, infix);
+    public ArrayList<Object> search(String query, String[] queryBy, Map<String,String> filterBy, String collection, Boolean infix) throws Exception{
+        return typeSearch.search(query, queryBy, filterBy, collection, infix);
     }
 
     /**

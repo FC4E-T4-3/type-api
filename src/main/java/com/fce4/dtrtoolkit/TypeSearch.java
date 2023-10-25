@@ -63,6 +63,9 @@ public class TypeSearch {
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("unit").type(FieldTypes.STRING).facet(true).infix(true));
+        fields.add(new Field().name("style").type(FieldTypes.STRING));
+
 
         CollectionSchema collectionSchema = new CollectionSchema();
         collectionSchema.name("types").fields(fields).defaultSortingField("date");
@@ -90,8 +93,8 @@ public class TypeSearch {
         fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
+        fields.add(new Field().name("quantity").type(FieldTypes.STRING).facet(true).infix(true));
         // fields.add(new Field().name("unitSymbol").type(FieldTypes.STRING).infix(true));
-        // fields.add(new Field().name("quantity").type(FieldTypes.STRING).infix(true));
         // fields.add(new Field().name("dimensionSymbol").type(FieldTypes.STRING).infix(true));
 
 
@@ -120,7 +123,7 @@ public class TypeSearch {
      * Search for types in the repository with a query.
      * @param identifier the PID to add/refresh in the cache.
      */
-    public ArrayList<Object> searchSimple(String query, String[] queryBy, String collection, Boolean infix) throws Exception{
+    public ArrayList<Object> search(String query, String[] queryBy, Map<String,String> filterBy, String collection, Boolean infix) throws Exception{
         ArrayList<Object> resultList = new ArrayList<Object> ();
         SearchParameters searchParameters = new SearchParameters()
                                         .q(query)
@@ -128,10 +131,23 @@ public class TypeSearch {
                                         .infix("always")
                                         .perPage(250)
                                         .page(1);
-        
-        //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
-        SearchResult searchResult = typeSenseClient.collections(collection).documents().search(searchParameters);
+        if(!filterBy.isEmpty()){
+            String filterString = "";
+            int size = filterBy.size();
+            int counter = 0;
+            for(String i : filterBy.keySet()){
+                filterString = filterString + i + ":[" + filterBy.get(i) + "]";                
+                counter +=1;
+                if(counter < size){
+                    filterString = filterString + " && ";
+                }
+            }
+            searchParameters.setFilterBy(filterString);
+        }
 
+        //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
+       
+        SearchResult searchResult = typeSenseClient.collections(collection).documents().search(searchParameters);
         for(SearchResultHit hit : searchResult.getHits()){
             resultList.add(mapper.writeValueAsString(hit.getDocument()));
         }
