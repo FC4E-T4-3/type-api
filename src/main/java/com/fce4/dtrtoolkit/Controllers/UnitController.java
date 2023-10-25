@@ -2,6 +2,7 @@ package com.fce4.dtrtoolkit.Controllers;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -105,10 +106,15 @@ public class UnitController {
     @CrossOrigin
     @RequestMapping(value = "/v1/units/{prefix}/{suffix}/types", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<String> getUnitTypes(@PathVariable String prefix, @PathVariable String suffix){
+    public ResponseEntity<Object> getUnitTypes(@PathVariable String prefix, @PathVariable String suffix) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        return new ResponseEntity<String>("GetUnit", responseHeaders, HttpStatus.OK);
+        HashMap<String,String> filter = new HashMap<String,String>();
+        filter.put("unit",prefix+"/"+suffix);
+        String[] queryBy = {"name"};
+        ArrayList<Object> result = typeService.search("*", queryBy, filter, "types", false);
+        return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 }

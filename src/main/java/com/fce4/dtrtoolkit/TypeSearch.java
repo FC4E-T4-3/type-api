@@ -143,6 +143,7 @@ public class TypeSearch {
                 }
             }
             searchParameters.setFilterBy(filterString);
+            System.out.println(searchParameters);
         }
 
         //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
