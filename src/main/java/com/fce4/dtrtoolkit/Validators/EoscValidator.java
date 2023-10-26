@@ -117,7 +117,7 @@ public class EoscValidator extends BaseValidator{
             String usedName = i.get("Name").textValue();
             TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
             
-            if(propertyEntity.getSchema().equals("InfoType")){
+            if(propertyEntity.getType().equals("InfoType")){
                 isBasic = false;
             }
 
@@ -174,7 +174,7 @@ public class EoscValidator extends BaseValidator{
         TypeEntity type = new TypeEntity(typeSearch.get(pid, "types"));
         ObjectNode root = mapper.createObjectNode();
 
-        if(type.getSchema().equals("BasicInfoType")){
+        if(type.getType().equals("BasicInfoType")){
             root = handleBasicType(type);
         }
         else{

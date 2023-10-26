@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.http.HttpStatus;
+import org.typesense.api.exceptions.ObjectNotFound;
 import java.util.Date;
 
 @ControllerAdvice

@@ -1,19 +1,19 @@
-package com.fce4.dtrtoolkit;
+package com.fce4.dtrtoolkit.Controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.github.underscore.U;
-import com.networknt.schema.ValidationMessage;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -29,16 +29,19 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.logging.Logger;
 
+import com.fce4.dtrtoolkit.TypeService;
+
 @RestController
 public class TypeController {
 
-    Logger logger = Logger.getLogger(TypeService.class.getName());
+    Logger logger = Logger.getLogger(TypeController.class.getName());
+    ObjectMapper mapper = new ObjectMapper();
     
     @Autowired
     TypeService typeService;
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/desc/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/desc/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.
@@ -70,7 +73,7 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/schema/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/schema/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Returns the JSON validation schema for a type. 
@@ -87,21 +90,7 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/decipher/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
-    @ResponseBody
-    /**
-     * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
-     * explainable content
-     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
-     */
-    public ResponseEntity<String> resolve(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
-        logger.info(String.format("Resolving ", prefix+"/"+suffix));
-        final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<String>("Resolving", responseHeaders, HttpStatus.OK);
-    }
-
-    @CrossOrigin
-    @RequestMapping(value = "/v1/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
@@ -120,26 +109,25 @@ public class TypeController {
     }
     
     @CrossOrigin
-    @RequestMapping(value = "/v1/search/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/search/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Search for types by name, author and desc by default. can be adjusted by using the queryBy parameters.
      */
-    public ResponseEntity<String> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,desc") String[] queryBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
-        ArrayList<Object> result = typeService.search(query, queryBy, infix);
+        filterBy.remove("query");
+        filterBy.remove("queryBy");
+        filterBy.remove("infix");
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        return new ResponseEntity<String>(result.toString(), responseHeaders, HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/v1/refresh/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<String> refresh() throws Exception { 
-
-        typeService.refreshRepository();
-        final HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
-        return new ResponseEntity<String>("success", responseHeaders, HttpStatus.OK);
+        try{
+            ArrayList<Object> result = typeService.search(query, queryBy, filterBy, "types", infix);
+            return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
+        }
+        catch(Exception e){
+            return new ResponseEntity<Object>("FilterBy or QueryBy field does not exist or is not indexed.", responseHeaders, HttpStatus.NOT_FOUND);
+        }
     }
 }

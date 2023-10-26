@@ -10,6 +10,4 @@ public interface BaseExtractor {
 
     ObjectMapper mapper = new ObjectMapper();
     HttpClient client = HttpClient.newHttpClient();
-
-    public void extractTypes(String url, List<Object> types, String dtr) throws Exception;
 }

@@ -29,7 +29,6 @@ public class LegacyExtractor implements BaseExtractor {
     @Autowired
     private TypeSearch typeSearch;
     
-    @Override
     public void extractTypes(String url, List<Object> types, String dtr) throws Exception{
         int counter = 0;
         HttpRequest request = HttpRequest.newBuilder()
@@ -53,7 +52,7 @@ public class LegacyExtractor implements BaseExtractor {
                 counter+=1;
             }
         }
-        typeSearch.upsertList(typeList);
+        typeSearch.upsertList(typeList, "types");
         logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
     }
 
@@ -72,7 +71,7 @@ public class LegacyExtractor implements BaseExtractor {
         ArrayList<String> authors = new ArrayList<String>();
 
         if(type.getContent().has("description")){
-           type.setDescription(type.getContent().get("description").textValue());
+           type.setDesc(type.getContent().get("description").textValue());
         }
         if(type.getContent().has("provenance")){
             JsonNode provenance = type.getContent().get("provenance");
