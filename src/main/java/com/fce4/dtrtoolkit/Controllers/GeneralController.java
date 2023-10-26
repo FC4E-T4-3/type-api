@@ -1,6 +1,7 @@
 package com.fce4.dtrtoolkit.Controllers;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -48,6 +49,15 @@ public class GeneralController {
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>("success", responseHeaders, HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @RequestMapping(value = "/v1/search", method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
+        logger.info("Searching for...");
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<Object>("Not implemented.", responseHeaders, HttpStatus.OK);
     }
     
 }

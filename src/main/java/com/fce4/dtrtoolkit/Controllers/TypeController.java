@@ -120,6 +120,7 @@ public class TypeController {
         filterBy.remove("queryBy");
         filterBy.remove("infix");
         final HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 
         try{
             ArrayList<Object> result = typeService.search(query, queryBy, filterBy, "types", infix);

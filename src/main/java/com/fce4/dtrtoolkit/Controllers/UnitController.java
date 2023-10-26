@@ -62,6 +62,7 @@ public class UnitController {
     public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
         logger.info("Searching for...");
         final HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         filterBy.remove("query");
         filterBy.remove("queryBy");
         filterBy.remove("infix");
