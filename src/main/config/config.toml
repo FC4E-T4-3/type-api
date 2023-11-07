@@ -16,3 +16,4 @@ suffix="objects?query=*"
 style="eosc"
 types=["BasicInfoType","InfoType","KernelInformationProfile"]
 units=["Basic-Unit","Derived-Unit"]
+taxonomy=["TaxonomyNode"]

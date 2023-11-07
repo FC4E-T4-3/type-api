@@ -1,40 +1,37 @@
 package com.fce4.dtrtoolkit;
 
-import com.fce4.dtrtoolkit.Extractors.*;
-import com.fce4.dtrtoolkit.Validators.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fce4.dtrtoolkit.Extractors.EoscExtractor;
+import com.fce4.dtrtoolkit.Extractors.LegacyExtractor;
+import com.fce4.dtrtoolkit.Validators.EoscValidator;
+import com.fce4.dtrtoolkit.Validators.LegacyValidator;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.ValidationMessage;
-
 import com.networknt.schema.SpecVersion;
-
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-import java.util.*;
+import com.networknt.schema.ValidationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.tomlj.Toml;
+import org.tomlj.TomlParseResult;
+import org.tomlj.TomlTable;
 
+import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Paths;
-import java.security.InvalidParameterException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
 import java.time.Duration;
-
-import org.tomlj.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import javax.annotation.PostConstruct;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 @Service
 public class TypeService {
@@ -87,12 +84,17 @@ public class TypeService {
 				TomlTable t = TomlTable.class.cast(i.getValue());
                 String dtr = i.getKey();
                 ArrayList<Object> units = new ArrayList<Object>();
+                ArrayList<Object> taxonomy = new ArrayList<Object>();
 				String url = t.getString("url");
 				String suffix = t.getString("suffix");
 				List<Object> types = t.getArray("types").toList();
 				String style = t.getString("style");
                 if(t.contains("units")){
                     units = new ArrayList<Object>(t.getArray("units").toList());
+                }
+
+                if(t.contains("taxonomy")){
+                    taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
                 }
 
                 logger.info(String.format("extracting %s", url));
@@ -102,7 +104,7 @@ public class TypeService {
                         legacyExtractor.extractTypes(url+suffix, types, dtr);
                         break;
                     case "eosc":
-                        eoscExtractor.extractTypes(url+suffix, types, units, dtr);
+                        eoscExtractor.extractTypes(url+suffix, types, units, taxonomy, dtr);
                         break;
                     default:
                         logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
@@ -216,7 +218,7 @@ public class TypeService {
     public void checkAdd(String pid, Boolean refresh) throws Exception {
         if(!typeSearch.has(pid, "types") || refresh){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
-            addType(pid);            
+            addType(pid);
         }
     }
 
