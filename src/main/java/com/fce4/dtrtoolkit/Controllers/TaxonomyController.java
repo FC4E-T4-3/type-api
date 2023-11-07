@@ -1,5 +1,6 @@
 package com.fce4.dtrtoolkit.Controllers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fce4.dtrtoolkit.TypeService;
+import com.fce4.dtrtoolkit.Taxonomies.TaxonomyGraph;
 import com.github.underscore.U;
 
 @RestController
@@ -32,6 +34,8 @@ public class TaxonomyController {
 
     @Autowired
     TypeService typeService;
+
+    @Autowired TaxonomyGraph taxonomyGraph;
     
     Logger logger = Logger.getLogger(UnitController.class.getName());
     ObjectMapper mapper = new ObjectMapper();
@@ -39,10 +43,13 @@ public class TaxonomyController {
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> getTaxonomy(@RequestParam(defaultValue = "false") Boolean onlyIDs) throws Exception{
+    public ResponseEntity<Object> getTaxonomy() throws Exception{
         logger.info(String.format("Retrieving entire taxonomy tree..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<Object>("Taxonomy", responseHeaders, HttpStatus.OK);
+
+        ArrayList<Object> result = typeService.search("*", new String[]{"name"}, Collections.emptyMap(), "taxonomy", false);
+
+        return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
     @CrossOrigin
@@ -51,16 +58,45 @@ public class TaxonomyController {
     public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
         logger.info("Searching for...");
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<Object>(mapper.readTree("Taxonomy Subtree."), responseHeaders, HttpStatus.OK);
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+        filterBy.remove("query");
+        filterBy.remove("queryBy");
+        filterBy.remove("infix");
+        try{
+            ArrayList<Object> result = typeService.search(query, queryBy, filterBy, "taxonomy", infix);
+            return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
+        }
+        catch(Exception e){
+            return new ResponseEntity<Object>("FilterBy or QueryBy field does not exist or is not indexed.", responseHeaders, HttpStatus.NOT_FOUND);
+        }
     }
 
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}) 
     @ResponseBody
-    public ResponseEntity<String> getTaxonomyNode(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception{
+    public ResponseEntity<Object> getTaxonomyNode(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception{
         logger.info(String.format("Retrieving taxonomy node ", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<String>("Test", responseHeaders, HttpStatus.OK);
+        JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+            try{
+               taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, refresh.orElse(false));
+            }
+            catch(Exception e){
+                throw new IOException(String.format("Requested Handle %s does not exist.", prefix+"/"+suffix));
+            }
+           if(header.get("accept") != null)
+           {
+               String format = header.get("accept").get(0);
+               if(format.equalsIgnoreCase("application/xml")){
+                   responseHeaders.setContentType(MediaType.APPLICATION_XML);
+                   //Using the https://github.com/javadev/underscore-java/ library to conver JSON to XML
+                   return new ResponseEntity<Object>(U.jsonToXml(taxonomyNode.toString()), responseHeaders, HttpStatus.OK);
+               }
+           }
+           return new ResponseEntity<Object>(taxonomyNode.toString(), responseHeaders, HttpStatus.OK);
+   
     }
 
     @CrossOrigin

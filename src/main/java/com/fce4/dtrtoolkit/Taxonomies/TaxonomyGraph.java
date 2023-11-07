@@ -26,6 +26,10 @@ public class TaxonomyGraph {
         return this.taxonomy;
     }
 
+    public TaxonomyEntity get(String pid){
+        return taxonomy.get(pid);
+    }
+
     @Override
     public String toString() {
         return "{" +

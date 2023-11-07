@@ -73,7 +73,6 @@ public class UnitController {
         catch(Exception e){
             return new ResponseEntity<Object>("FilterBy or QueryBy field does not exist or is not indexed.", responseHeaders, HttpStatus.NOT_FOUND);
         }
-
     }
 
     @CrossOrigin

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fce4.dtrtoolkit.Extractors.EoscExtractor;
 import com.fce4.dtrtoolkit.Extractors.LegacyExtractor;
+import com.fce4.dtrtoolkit.Taxonomies.TaxonomyEntity;
+import com.fce4.dtrtoolkit.Taxonomies.TaxonomyGraph;
 import com.fce4.dtrtoolkit.Validators.EoscValidator;
 import com.fce4.dtrtoolkit.Validators.LegacyValidator;
 import com.networknt.schema.JsonSchema;
@@ -52,6 +54,9 @@ public class TypeService {
     private LegacyExtractor legacyExtractor;
     @Autowired
     private EoscExtractor eoscExtractor;
+
+    @Autowired
+    private TaxonomyGraph taxonomyGraph;
 
     private String config="src/main/config/config.toml";
     
@@ -186,6 +191,12 @@ public class TypeService {
         Map<String, Object> unit = typeSearch.get(pid, "units");
         UnitEntity unitEntity = new UnitEntity(unit);
         return unitEntity.serialize();
+    }
+
+    public JsonNode getTaxonomyNode(String pid, Boolean refresh) throws Exception {
+        //checkAdd(pid, refresh);
+        TaxonomyEntity taxonomyEntity = taxonomyGraph.get(pid);
+        return mapper.valueToTree(taxonomyEntity.serializeSearch());
     }
 
     /**
