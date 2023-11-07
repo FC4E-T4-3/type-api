@@ -168,7 +168,6 @@ public class TypeService {
         else{
             logger.warning("PID does not describe a type or is not supported by this application.");
         }
-
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
     }
 
@@ -197,6 +196,11 @@ public class TypeService {
         //checkAdd(pid, refresh);
         TaxonomyEntity taxonomyEntity = taxonomyGraph.get(pid);
         return mapper.valueToTree(taxonomyEntity.serializeSearch());
+    }
+
+    public JsonNode getTaxonomySubtree(String pid) throws Exception{
+        //checkAdd(pid, refresh);
+       return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
     /**
@@ -249,7 +253,7 @@ public class TypeService {
      */
     public String validate(String pid, Object object) throws Exception{
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        JsonSchema schema = factory.getSchema(getValidation(pid, false).toString());
+        JsonSchema schema = factory.getSchema(getValidation(pid,false).toString());
         JsonNode node = mapper.valueToTree(object);
         Set<ValidationMessage> errors = schema.validate(node);
         if(errors.size()>0){

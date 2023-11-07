@@ -1,9 +1,15 @@
 package com.fce4.dtrtoolkit.Taxonomies;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
-import org.springframework.stereotype.Component; 
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.Objects;
+import java.util.Set;
 
 @Component
 public class TaxonomyGraph {
@@ -20,6 +26,26 @@ public class TaxonomyGraph {
                 taxonomy.get(parent).addChild(t);
             }
         }
+    }
+
+    public LinkedHashMap<String,Object> getSubtree(String pid) throws Exception{
+        LinkedHashMap<String,Object> tree = new LinkedHashMap<String,Object>();
+        ArrayList<TaxonomyEntity> currentChildren = new ArrayList<TaxonomyEntity>();
+        System.out.println(currentChildren);
+        tree.put(pid, get(pid).serializeSearch());
+        System.out.println(tree);
+        for(TaxonomyEntity t : get(pid).getChildren()){
+            currentChildren.add(t);
+        }
+        while(currentChildren.size()>0){
+            TaxonomyEntity tmp = currentChildren.get(0);
+            tree.put(tmp.getPid(), tmp.serializeSearch());
+            for(TaxonomyEntity t : tmp.getChildren()){
+                currentChildren.add(t);
+            }
+            currentChildren.remove(0);
+        }
+        return tree;
     }
 
     public HashMap<String,TaxonomyEntity> getTaxonomy() {

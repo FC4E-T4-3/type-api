@@ -96,7 +96,6 @@ public class TaxonomyController {
                }
            }
            return new ResponseEntity<Object>(taxonomyNode.toString(), responseHeaders, HttpStatus.OK);
-   
     }
 
     @CrossOrigin
@@ -114,6 +113,7 @@ public class TaxonomyController {
     public ResponseEntity<Object> getTaxonomySubtree(@PathVariable String prefix, @PathVariable String suffix) throws Exception{
         logger.info(String.format("Getting subtree from node %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<Object>(mapper.readTree("Taxonomy Subtree."), responseHeaders, HttpStatus.OK);
+        JsonNode result = typeService.getTaxonomySubtree(prefix+"/"+suffix);
+        return new ResponseEntity<Object>(result, responseHeaders, HttpStatus.OK);
     }
 }
