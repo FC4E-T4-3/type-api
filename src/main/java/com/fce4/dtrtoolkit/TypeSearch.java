@@ -61,6 +61,7 @@ public class TypeSearch {
         fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
         fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
+        fields.add(new Field().name("taxonomies").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));

@@ -3,13 +3,9 @@ package com.fce4.dtrtoolkit.Taxonomies;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import java.util.Objects;
-import java.util.Set;
 
 @Component
 public class TaxonomyGraph {
@@ -31,9 +27,7 @@ public class TaxonomyGraph {
     public LinkedHashMap<String,Object> getSubtree(String pid) throws Exception{
         LinkedHashMap<String,Object> tree = new LinkedHashMap<String,Object>();
         ArrayList<TaxonomyEntity> currentChildren = new ArrayList<TaxonomyEntity>();
-        System.out.println(currentChildren);
         tree.put(pid, get(pid).serializeSearch());
-        System.out.println(tree);
         for(TaxonomyEntity t : get(pid).getChildren()){
             currentChildren.add(t);
         }
@@ -46,6 +40,10 @@ public class TaxonomyGraph {
             currentChildren.remove(0);
         }
         return tree;
+    }
+
+    public Set<String> getSubtreePIDs(String pid) throws Exception {
+        return getSubtree(pid).keySet();
     }
 
     public HashMap<String,TaxonomyEntity> getTaxonomy() {
@@ -62,5 +60,4 @@ public class TaxonomyGraph {
             " taxonomy='" + getTaxonomy() + "'" +
             "}";
     }
-    
 }

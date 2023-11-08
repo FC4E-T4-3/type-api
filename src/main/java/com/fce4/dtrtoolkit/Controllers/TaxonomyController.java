@@ -101,10 +101,11 @@ public class TaxonomyController {
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}/types", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> getTaxonomyTypes(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional <Boolean> subtree) throws Exception{
+    public ResponseEntity<Object> getTaxonomyTypes(@PathVariable String prefix, @PathVariable String suffix, @RequestParam(defaultValue="false") Boolean subtree) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<Object>(mapper.readTree("Taxonomy Subtree."), responseHeaders, HttpStatus.OK);
+        ArrayList<Object> result = typeService.getTypesTaxonomy(prefix+"/"+suffix, subtree);
+        return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
     @CrossOrigin

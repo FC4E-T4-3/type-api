@@ -16,31 +16,34 @@ public class TaxonomyEntity {
     private String name = "";
     private long date = 0;
     private String desc = "";
+    private String reference = "";
     private ArrayList<String> authors = new ArrayList<String>();
     private ArrayList<String> parentsString = new ArrayList<String>();
     private Set<TaxonomyEntity> parents = new HashSet<TaxonomyEntity>();
     private Set<TaxonomyEntity> children = new HashSet<TaxonomyEntity>();
 
-    public TaxonomyEntity(String pid, String type, String origin, String name, long date, String desc, ArrayList<String> authors, ArrayList<String> parentsString, Set<TaxonomyEntity> parents, Set<TaxonomyEntity> children) {
+    public TaxonomyEntity(String pid, String type, String origin, String name, long date, String desc, String reference, ArrayList<String> authors, ArrayList<String> parentsString, Set<TaxonomyEntity> parents, Set<TaxonomyEntity> children) {
         this.pid = pid;
         this.type = type;
         this.origin = origin;
         this.name = name;
         this.date = date;
         this.desc = desc;
+        this.reference = reference;
         this.authors = authors;
         this.parentsString = parentsString;
         this.parents = parents;
         this.children = children;
     }
 
-    public TaxonomyEntity(String pid, String type, String origin, String name, long date, String desc, ArrayList<String> authors, ArrayList<String> parentsString) {
+    public TaxonomyEntity(String pid, String type, String origin, String name, long date, String desc, String reference, ArrayList<String> authors, ArrayList<String> parentsString) {
         this.pid = pid;
         this.type = type;
         this.origin = origin;
         this.name = name;
         this.date = date;
         this.desc = desc;
+        this.reference = reference;
         this.authors = authors;
         this.parentsString = parentsString;
     }
@@ -188,6 +191,7 @@ public class TaxonomyEntity {
         typeSearch.put("name", this.name);
         typeSearch.put("type", this.type);
         typeSearch.put("date", this.date);
+        typeSearch.put("reference", this.reference);
         typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));

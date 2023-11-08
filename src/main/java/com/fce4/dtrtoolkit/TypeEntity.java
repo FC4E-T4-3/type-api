@@ -16,6 +16,7 @@ public class TypeEntity {
     private String name = "";
     private long date = 0;
     private String desc = "";
+    private ArrayList<String> taxonomies = new ArrayList<String>();
     private ArrayList<String> authors;
     private ArrayList<String> aliases;
     private JsonNode content;
@@ -54,6 +55,7 @@ public class TypeEntity {
         this.type = node.get("type").toString();
         this.content = mapper.valueToTree(node.get("content"));
         this.authors = (ArrayList<String>) node.get("authors");
+        this.taxonomies = (ArrayList<String>) node.get("taxonomies");
         this.date = Long.parseLong(node.get("date").toString());
         this.desc = node.get("description").toString();
         this.style = node.get("style").toString();
@@ -63,7 +65,6 @@ public class TypeEntity {
             this.unit = node.get("unit").toString();
         }
     }
-
 
     public String getPid() {
         return this.pid;
@@ -129,6 +130,14 @@ public class TypeEntity {
         this.authors = authors;
     }
 
+    public ArrayList<String> getTaxonomies() {
+        return this.taxonomies;
+    }
+
+    public void setTaxonomies(ArrayList<String> taxonomies) {
+        this.taxonomies = taxonomies;
+    }
+
     public ArrayList<String> getAliases() {
         return this.aliases;
     }
@@ -172,6 +181,7 @@ public class TypeEntity {
         typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
+        typeSearch.put("taxonomies", this.taxonomies.toArray(new String[0]));
         typeSearch.put("content", this.content);
         typeSearch.put("style", this.style);
         typeSearch.put("unit", this.unit);

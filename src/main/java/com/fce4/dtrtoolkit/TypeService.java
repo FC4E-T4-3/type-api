@@ -203,13 +203,24 @@ public class TypeService {
        return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
+    public ArrayList<Object> getTypesTaxonomy(String pid, Boolean getSubtree) throws Exception{        
+        Map<String, String> filterBy = new HashMap<String, String>();
+        if(getSubtree){
+            Set<String> subtree = taxonomyGraph.getSubtreePIDs(pid);
+            filterBy.put("taxonomies", subtree.toString());
+        }
+        else{
+            filterBy.put("taxonomies", pid);
+        }
+        return search("*", new String[]{"name"}, filterBy, "types", true);
+    }
+
     /**
      * Construct and return the validation schema of a type from the repo.
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
     public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
-        
         ObjectNode root = mapper.createObjectNode();
         checkAdd(pid, refresh);
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));

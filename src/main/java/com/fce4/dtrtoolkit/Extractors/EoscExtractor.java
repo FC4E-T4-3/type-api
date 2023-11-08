@@ -161,11 +161,14 @@ public class EoscExtractor implements BaseExtractor {
         long timestamp = 0;
         ArrayList<String> authors = new ArrayList<String>();
         String desc = ""; 
+        String reference = "";
         ArrayList<String> parents = new ArrayList<String>();
 
         JsonNode content = node.get("content");
         String name = content.get("name").textValue();
-
+        if(content.has("description")){
+           desc = content.get("description").textValue();
+        }
         if(content.has("provenance")){
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
@@ -184,17 +187,21 @@ public class EoscExtractor implements BaseExtractor {
                 }
             }
         }
+        if(content.has("reference")){
+            reference = content.get("reference").textValue();
+        }
         if(content.has("parents")){
             for(JsonNode i : content.get("parents")){
                 parents.add(i.textValue());
             }
         }
         
-        return new TaxonomyEntity(pid, type, origin, name, timestamp, desc, authors, parents);
+        return new TaxonomyEntity(pid, type, origin, name, timestamp, desc, reference, authors, parents);
     }
 
     public void extractTypeFields(TypeEntity type){
         ArrayList<String> authors = new ArrayList<String>();
+        ArrayList<String> taxonomies = new ArrayList<String>();
 
         if(type.getContent().has("description")){
            type.setDesc(type.getContent().get("description").textValue());
@@ -218,6 +225,12 @@ public class EoscExtractor implements BaseExtractor {
                 }
             }
         }
+        if(type.getContent().has("Taxonomies")){
+            for(JsonNode i : type.getContent().get("Taxonomies")){
+                taxonomies.add(i.textValue());
+            }
+        }
+        type.setTaxonomies(taxonomies);
         if(type.getContent().has("MeasuredUnits")){
             type.setUnit(type.getContent().get("MeasuredUnits").get(0).textValue());
         }
