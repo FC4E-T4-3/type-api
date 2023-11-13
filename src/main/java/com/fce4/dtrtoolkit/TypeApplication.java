@@ -10,6 +10,7 @@ import java.util.Date;
 @ComponentScan("com.fce4.dtrtoolkit.Validators")
 @ComponentScan("com.fce4.dtrtoolkit.Extractors")
 @ComponentScan("com.fce4.dtrtoolkit.Controllers")
+@ComponentScan("com.fce4.dtrtoolkit.Taxonomies")
 @ComponentScan("com.fce4.dtrtoolkit")
 @EnableScheduling
 

@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fce4.dtrtoolkit.TypeEntity;
 import com.fce4.dtrtoolkit.TypeSearch;
 import com.fce4.dtrtoolkit.UnitEntity;
+import com.fce4.dtrtoolkit.Taxonomies.TaxonomyEntity;
+import com.fce4.dtrtoolkit.Taxonomies.TaxonomyGraph;
 
 @Component
 public class EoscExtractor implements BaseExtractor {
@@ -27,14 +29,19 @@ public class EoscExtractor implements BaseExtractor {
     Logger logger = Logger.getLogger(EoscExtractor.class.getName());
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
     ArrayList<HashMap<String, Object>> unitList = new ArrayList<>();
-
+    ArrayList<HashMap<String, Object>> taxonomyList = new ArrayList<>();
 
     @Autowired
     private TypeSearch typeSearch;
+
+    @Autowired
+    private TaxonomyGraph taxonomyGraph;
     
-    public void extractTypes(String url, List<Object> types, ArrayList<Object> units, String dtr) throws Exception{
+    public void extractTypes(String url, List<Object> types, ArrayList<Object> units, ArrayList<Object> taxonomy, String dtr) throws Exception{
         int typeCounter = 0;
         int unitCounter = 0;
+        int taxonomyCounter = 0;
+
 
         HttpRequest request = HttpRequest.newBuilder()
             .GET()
@@ -61,12 +68,25 @@ public class EoscExtractor implements BaseExtractor {
                 unitList.add(unitEntity.serializeSearch());
                 unitCounter+=1;
             }
+            if(taxonomy.contains(jsonNode.get("type").textValue())){
+                TaxonomyEntity taxonomyEntity = createTaxonomyEntity(jsonNode, dtr);
+                taxonomyGraph.addNode(taxonomyEntity);
+                taxonomyCounter+=1;
+            }
         }
+
+        taxonomyGraph.generateRelations();
+        for(TaxonomyEntity t : taxonomyGraph.getTaxonomy().values()){
+            taxonomyList.add(t.serializeSearch());
+        }    
+        
         typeSearch.upsertList(typeList, "types");
         typeSearch.upsertList(unitList, "units");
+        typeSearch.upsertList(taxonomyList, "taxonomy");
 
         logger.info(String.format("Added %s types from DTR '%s'.", typeCounter, dtr));
         logger.info(String.format("Added %s units from DTR '%s'.", unitCounter, dtr));
+        logger.info(String.format("Added %s taxonomy nodes from DTR '%s'.", taxonomyCounter, dtr));
     }
 
     public TypeEntity createTypeEntity(JsonNode node, String dtr) {
@@ -134,8 +154,54 @@ public class EoscExtractor implements BaseExtractor {
         return new UnitEntity(pid, type, origin, name, timestamp, desc, authors, unitSymbol, quantity, quantitySymbol);
     }
 
+    public TaxonomyEntity createTaxonomyEntity(JsonNode node, String dtr){
+        String pid = node.get("id").textValue();
+        String type = node.get("type").textValue();
+        String origin = dtr;
+        long timestamp = 0;
+        ArrayList<String> authors = new ArrayList<String>();
+        String desc = ""; 
+        String reference = "";
+        ArrayList<String> parents = new ArrayList<String>();
+
+        JsonNode content = node.get("content");
+        String name = content.get("name").textValue();
+        if(content.has("description")){
+           desc = content.get("description").textValue();
+        }
+        if(content.has("provenance")){
+            JsonNode provenance = content.get("provenance");
+            if(provenance.has("contributors")){
+                for(JsonNode i : provenance.get("contributors")){
+                    authors.add(i.get("name").textValue());
+                }
+            }
+            if(provenance.has("creationDate")){
+                String dateString = provenance.get("creationDate").textValue().substring(0, 10);
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                try{
+                    Date date = format.parse(dateString);
+                    timestamp = date.getTime() / 1000L;
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        if(content.has("reference")){
+            reference = content.get("reference").textValue();
+        }
+        if(content.has("parents")){
+            for(JsonNode i : content.get("parents")){
+                parents.add(i.textValue());
+            }
+        }
+        
+        return new TaxonomyEntity(pid, type, origin, name, timestamp, desc, reference, authors, parents);
+    }
+
     public void extractTypeFields(TypeEntity type){
         ArrayList<String> authors = new ArrayList<String>();
+        ArrayList<String> taxonomies = new ArrayList<String>();
 
         if(type.getContent().has("description")){
            type.setDesc(type.getContent().get("description").textValue());
@@ -159,6 +225,12 @@ public class EoscExtractor implements BaseExtractor {
                 }
             }
         }
+        if(type.getContent().has("Taxonomies")){
+            for(JsonNode i : type.getContent().get("Taxonomies")){
+                taxonomies.add(i.textValue());
+            }
+        }
+        type.setTaxonomies(taxonomies);
         if(type.getContent().has("MeasuredUnits")){
             type.setUnit(type.getContent().get("MeasuredUnits").get(0).textValue());
         }

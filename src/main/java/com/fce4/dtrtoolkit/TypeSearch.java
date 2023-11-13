@@ -45,6 +45,7 @@ public class TypeSearch {
     public void initTypesense() throws Exception{
         initTypes();
         initUnits();
+        initTaxonomy();
     }
 
     public void initTypes() throws Exception{
@@ -60,6 +61,7 @@ public class TypeSearch {
         fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
         fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
+        fields.add(new Field().name("taxonomies").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
@@ -94,12 +96,35 @@ public class TypeSearch {
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("quantity").type(FieldTypes.STRING).facet(true).infix(true));
-        // fields.add(new Field().name("unitSymbol").type(FieldTypes.STRING).infix(true));
-        // fields.add(new Field().name("dimensionSymbol").type(FieldTypes.STRING).infix(true));
-
 
         CollectionSchema collectionSchema = new CollectionSchema();
         collectionSchema.name("units").fields(fields).defaultSortingField("date");
+        try{
+            typeSenseClient.collections().create(collectionSchema);        
+        }
+        catch(Exception e){
+            logger.info("Collection already exists");
+        }
+    }
+
+    public void initTaxonomy() throws Exception {
+        try{
+            typeSenseClient.collections("taxonomy").retrieve();
+            typeSenseClient.collections("taxonomy").delete();
+        }
+        catch(Exception e) {
+            logger.info("Collection taxonomy did not exist yet. Creating...");
+        }
+
+        List<Field> fields = new ArrayList<>();
+        fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
+        fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
+        fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
+
+        CollectionSchema collectionSchema = new CollectionSchema();
+        collectionSchema.name("taxonomy").fields(fields).defaultSortingField("date");
         try{
             typeSenseClient.collections().create(collectionSchema);        
         }
