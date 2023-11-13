@@ -61,13 +61,14 @@ public class TypeSearch {
         fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
         fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
+        fields.add(new Field().name("aliases").type(FieldTypes.STRING_ARRAY).infix(true));
         fields.add(new Field().name("taxonomies").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
         fields.add(new Field().name("type").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
         fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("unit").type(FieldTypes.STRING).facet(true).infix(true));
         fields.add(new Field().name("style").type(FieldTypes.STRING));
-
+        fields.add(new Field().name("fundamentalType").type(FieldTypes.STRING));
 
         CollectionSchema collectionSchema = new CollectionSchema();
         collectionSchema.name("types").fields(fields).defaultSortingField("date");
@@ -168,7 +169,6 @@ public class TypeSearch {
                 }
             }
             searchParameters.setFilterBy(filterString);
-            System.out.println(searchParameters);
         }
 
         //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.

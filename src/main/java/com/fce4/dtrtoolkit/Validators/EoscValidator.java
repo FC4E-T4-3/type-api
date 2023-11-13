@@ -19,10 +19,10 @@ public class EoscValidator extends BaseValidator{
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
 
-        if(!content.has("TypeSchema")){
+        if(!content.has("Schema")){
             return node;
         }
-        JsonNode properties = content.get("TypeSchema").get("Properties");
+        JsonNode properties = content.get("Schema").get("Properties");
         String datatype = properties.get("Type").textValue().toLowerCase();
         if(datatype.equals("none")){
             return node;
@@ -87,86 +87,131 @@ public class EoscValidator extends BaseValidator{
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
 
-        if(!content.has("Components")){
-            return node;
-        }
-        JsonNode components = content.get("Components");
-    
-        JsonNode properties = components.get("Properties");
-        boolean addProps = false;
-        boolean oneOf = false;
-        if(components.has("addProps")){
-            addProps = components.get("addProps").asBoolean();
-        }
-        if(components.has("oneOf")){
-            oneOf = components.get("oneOf").asBoolean();
-        }        
-        if(properties.size()==0){
+        if(!content.has("Schema")){
             return node;
         }
 
-        node.put("type","object");
-        node.put("additionalProperties", addProps);
-        ObjectNode propertyNodes = mapper.createObjectNode();
-
-        for(JsonNode i : properties){
-            ObjectNode propertyNode = mapper.createObjectNode();
-            JsonNode typeProperties = i.get("Properties");
-            String cardinality = typeProperties.get("Cardinality").textValue();
-            boolean isBasic = true;
-            String usedName = i.get("Name").textValue();
-            TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
-            
-            if(propertyEntity.getType().equals("InfoType")){
-                isBasic = false;
+        JsonNode schema = content.get("Schema").get("Properties");
+        String type = schema.get("Type").textValue();
+        if(type.equals("Object")){
+            JsonNode properties = schema.get("Properties");
+            boolean addProps = false;
+            String subCond = "";
+            if(schema.has("addProps")){
+                addProps = schema.get("addProps").asBoolean();
+            }
+            if(schema.has("subCond")){
+                subCond = schema.get("subCond").textValue();
             }
 
-            if(cardinality.equals("0 - 1") || cardinality.equals("1")){
-                if(isBasic){
-                    propertyNode = handleBasicType(propertyEntity);
+            if(properties.size()==0){
+                return node;
+            }
+
+            node.put("type","object");
+            node.put("additionalProperties", addProps);
+            ObjectNode propertyNodes = mapper.createObjectNode();
+            ArrayNode requiredArray = mapper.createArrayNode();
+            for(JsonNode i : properties){
+                ObjectNode propertyNode = mapper.createObjectNode();
+                JsonNode typeProperties = i.get("Properties");
+                String cardinality = typeProperties.get("Cardinality").textValue();
+                boolean isBasic = true;
+                boolean extractSub = false;
+                String usedName = i.get("Name").textValue();
+                TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
+                //logger.info(propertyEntity.serialize().toString());
+                if(propertyEntity.getType().equals("InfoType")){
+                    isBasic = false;
+                    if(propertyEntity.getFundamentalType().equals("Object")){
+                        if(typeProperties.get("extractProperties").asBoolean()){
+                            extractSub = true;
+                        }
+                    }
+                }
+                if(cardinality.equals("0 - 1") || cardinality.equals("1")){
+                    if(isBasic){
+                        propertyNode = handleBasicType(propertyEntity);
+                    }
+                    else{
+                        if(extractSub){
+                            ObjectNode tmp = mapper.convertValue(handleInfoType(propertyEntity).get("properties"), ObjectNode.class);
+                            propertyNodes.setAll(tmp);
+                        }
+                        else{
+                            propertyNode.put("type", "object");
+                            propertyNode.setAll(handleInfoType(propertyEntity));
+                             if(cardinality.equals("1")){
+                                requiredArray.add(usedName);
+                            }
+                        }
+                    }  
                 }
                 else{
-                    propertyNode.put("type", "object");
-                    propertyNode.setAll(handleInfoType(propertyEntity));
+                    propertyNode.put("type", "array");
+                    if(isBasic){
+                        propertyNode.putPOJO("items", handleBasicType(propertyEntity));
+                    }
+                    else{
+                        propertyNode.putPOJO("items", handleInfoType(propertyEntity));
+                    }
+                    if(cardinality.equals("1 - n")){
+                        requiredArray.add(usedName);
+                    }
                 }
-                if(cardinality.equals("1")){
-                    propertyNode.put("required",true);
+                if(typeProperties.has("Value")){
+                    propertyNode.putPOJO("const",typeProperties.get("Value"));
+                }
+                if(!extractSub){
+                    propertyNodes.putPOJO(usedName, propertyNode);
+                }
+            }
+
+            if(requiredArray.size()>0){
+                node.putPOJO("required", requiredArray);
+            }
+
+            if(!subCond.equals("")){
+                ArrayNode oneOfNode = node.putArray(subCond);
+                Iterator<Map.Entry<String, JsonNode>> fieldsIterator = propertyNodes.fields();
+                while (fieldsIterator.hasNext()) {
+                    ObjectNode tmp = mapper.createObjectNode();
+                    ObjectNode tmpProps = mapper.createObjectNode();
+                    Map.Entry<String, JsonNode> entry = fieldsIterator.next();
+                    tmp.putPOJO(entry.getKey(), entry.getValue());
+                    tmpProps.putPOJO("properties", tmp);
+                    oneOfNode.addPOJO(tmpProps);
                 }
             }
             else{
-                propertyNode.put("type", "array");
-                if(isBasic){
-                    propertyNode.putPOJO("items", handleBasicType(propertyEntity));
-                }
-                else{
-                    propertyNode.putPOJO("items", handleInfoType(propertyEntity));
-                }
-                if(cardinality.equals("1 - n")){
-                    propertyNode.put("minItems", 1);
-                    propertyNode.put("required",true);
-                }
-            }
-            if(typeProperties.has("Value")){
-                propertyNode.putPOJO("const",typeProperties.get("Value"));
-            }
-            propertyNodes.putPOJO(usedName, propertyNode);
-        }
-
-        if(oneOf){
-            ArrayNode oneOfNode = node.putArray("oneOf");
-            Iterator<Map.Entry<String, JsonNode>> fieldsIterator = propertyNodes.fields();
-            while (fieldsIterator.hasNext()) {
-                ObjectNode tmp = mapper.createObjectNode();
-                ObjectNode tmpProps = mapper.createObjectNode();
-                Map.Entry<String, JsonNode> entry = fieldsIterator.next();
-                tmp.putPOJO(entry.getKey(), entry.getValue());
-                tmpProps.putPOJO("properties", tmp);
-                oneOfNode.addPOJO(tmpProps);
+                node.putPOJO("properties", propertyNodes);
             }
         }
         else{
-            node.putPOJO("properties", propertyNodes);
+            node.put("type", "array");
+            if(schema.get("maxItems").asInt()>0){
+                node.put("maxItems", schema.get("maxItems").asInt());
+            }
+            if(schema.get("minItems").asInt()>0){
+                node.put("minItems", schema.get("minItems").asInt());
+            }
+            if(schema.has("unique")){
+                if(schema.get("unique").asBoolean()){
+                    node.put("unique", true);
+                }
+            }
+
+            ObjectNode propertyNode = mapper.createObjectNode();
+            TypeEntity propertyEntity = new TypeEntity(typeSearch.get((schema.get("subCond").textValue()), "types"));
+            if(propertyEntity.getType().equals("BasicInfoType")){
+                propertyNode = handleBasicType(propertyEntity);
+            }
+            else{
+                propertyNode = handleInfoType(propertyEntity);
+            }
+            node.putPOJO("items",propertyNode);
         }
+        
         return node;
     } 
     

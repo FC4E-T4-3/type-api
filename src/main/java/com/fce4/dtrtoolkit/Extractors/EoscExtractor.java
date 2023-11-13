@@ -202,12 +202,23 @@ public class EoscExtractor implements BaseExtractor {
     public void extractTypeFields(TypeEntity type){
         ArrayList<String> authors = new ArrayList<String>();
         ArrayList<String> taxonomies = new ArrayList<String>();
+        ArrayList<String> aliases = new ArrayList<String>();
 
-        if(type.getContent().has("description")){
-           type.setDesc(type.getContent().get("description").textValue());
+        String fundamentalType = "undefined";
+
+        JsonNode content = type.getContent();
+        if(content.has("Schema")){
+            if(content.get("Schema").has("Properties")){
+                fundamentalType = content.get("Schema").get("Properties").get("Type").textValue();
+            }
         }
-        if(type.getContent().has("provenance")){
-            JsonNode provenance = type.getContent().get("provenance");
+        type.setFundamentalType(fundamentalType);
+
+        if(content.has("description")){
+           type.setDesc(content.get("description").textValue());
+        }
+        if(content.has("provenance")){
+            JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
                     authors.add(i.get("name").textValue());
@@ -225,16 +236,22 @@ public class EoscExtractor implements BaseExtractor {
                 }
             }
         }
-        if(type.getContent().has("Taxonomies")){
-            for(JsonNode i : type.getContent().get("Taxonomies")){
+        if(content.has("Aliases")){
+            for(JsonNode i : content.get("Aliases")){
+                aliases.add(i.textValue());
+            }
+        }
+        if(content.has("Taxonomies")){
+            for(JsonNode i : content.get("Taxonomies")){
                 taxonomies.add(i.textValue());
             }
         }
         type.setTaxonomies(taxonomies);
-        if(type.getContent().has("MeasuredUnits")){
-            type.setUnit(type.getContent().get("MeasuredUnits").get(0).textValue());
+        if(content.has("MeasuredUnits")){
+            type.setUnit(content.get("MeasuredUnits").get(0).textValue());
         }
         type.setAuthors(authors);
+        type.setAliases(aliases);
         return;
     }
 }

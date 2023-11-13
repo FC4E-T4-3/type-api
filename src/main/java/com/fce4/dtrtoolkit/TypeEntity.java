@@ -17,10 +17,11 @@ public class TypeEntity {
     private long date = 0;
     private String desc = "";
     private ArrayList<String> taxonomies = new ArrayList<String>();
-    private ArrayList<String> authors;
-    private ArrayList<String> aliases;
+    private ArrayList<String> authors = new ArrayList<String>();
+    private ArrayList<String> aliases = new ArrayList<String>();
     private JsonNode content;
     private String unit = "None";
+    private String fundamentalType = "None";
 
     public TypeEntity(String pid, String prefix, String type, JsonNode content, String style, String origin, String name) {
         this.pid = pid;
@@ -56,11 +57,15 @@ public class TypeEntity {
         this.content = mapper.valueToTree(node.get("content"));
         this.authors = (ArrayList<String>) node.get("authors");
         this.taxonomies = (ArrayList<String>) node.get("taxonomies");
+        this.aliases = (ArrayList<String>) node.get("aliases");
         this.date = Long.parseLong(node.get("date").toString());
         this.desc = node.get("description").toString();
         this.style = node.get("style").toString();
         this.name = node.get("name").toString();
         this.origin = node.get("origin").toString();
+        if(node.containsKey("fundamentalType")){
+            this.fundamentalType = node.get("fundamentalType").toString();
+        }
         if(node.containsKey("unit")){
             this.unit = node.get("unit").toString();
         }
@@ -162,6 +167,14 @@ public class TypeEntity {
         return this.unit;
     }
 
+     public void setFundamentalType(String type) {
+        this.fundamentalType = type;
+    }
+
+    public String getFundamentalType() {
+        return this.fundamentalType;
+    }
+
     /**
      * Serializes a TypeObject to a JsonNode object. The setters and getters are required for the mapper.
      * @return a JsonNode representing the TypeObject.
@@ -181,10 +194,12 @@ public class TypeEntity {
         typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
+        typeSearch.put("aliases", this.aliases.toArray(new String[0]));
         typeSearch.put("taxonomies", this.taxonomies.toArray(new String[0]));
         typeSearch.put("content", this.content);
         typeSearch.put("style", this.style);
         typeSearch.put("unit", this.unit);
+        typeSearch.put("fundamentalType", this.fundamentalType);
         return typeSearch;
     }
 }
