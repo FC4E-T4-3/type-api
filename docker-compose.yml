@@ -1,0 +1,18 @@
+version: '3.4'
+services:
+  typesense:
+    image: typesense/typesense:0.25.1
+    restart: on-failure
+    ports:
+      - "8108:8108"
+    volumes:
+      - ./typesense-data:/data
+    command: '--data-dir /data --api-key=xyz --enable-cors'
+  typeapi:
+    image: ghcr.io/fc4e-t4-3/dtr-toolkit:latest
+    ports: 
+      - "8080:8080"
+    environment:
+      - "SPRING_PROFILES_ACTIVE=default"
+      - "TYPESENSE_URL=typesense"
+      - "TYPESEMSE_KEY=xyz"
