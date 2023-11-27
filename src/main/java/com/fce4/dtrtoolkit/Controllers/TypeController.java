@@ -84,7 +84,7 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
@@ -92,14 +92,8 @@ public class TypeController {
     public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix, @RequestBody Object payload) throws Exception {
         logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        System.out.println(payload);
-        try{
-            String response = typeService.validate(prefix + "/" + suffix, payload);
-            return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
-        }
-        catch(Exception e){
-            return new ResponseEntity<String>(e.getMessage().toString(), responseHeaders, HttpStatus.BAD_REQUEST);
-        }
+        String response = typeService.validate(prefix + "/" + suffix, payload);
+        return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
     }
     
     @CrossOrigin

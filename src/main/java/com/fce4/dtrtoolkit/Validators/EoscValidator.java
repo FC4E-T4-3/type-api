@@ -3,12 +3,15 @@ package com.fce4.dtrtoolkit.Validators;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang3.ObjectUtils.Null;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fce4.dtrtoolkit.TypeEntity;
+import com.github.underscore.Json;
 
 @Component
 public class EoscValidator extends BaseValidator{
@@ -94,22 +97,27 @@ public class EoscValidator extends BaseValidator{
         JsonNode schema = content.get("Schema").get("Properties");
         String type = schema.get("Type").textValue();
         if(type.equals("Object")){
+            node.put("type","object");
+
+            if(!schema.has("Properties")){
+                return node;
+            }
             JsonNode properties = schema.get("Properties");
             boolean addProps = false;
             String subCond = "";
+ 
             if(schema.has("addProps")){
                 addProps = schema.get("addProps").asBoolean();
             }
             if(schema.has("subCond")){
                 subCond = schema.get("subCond").textValue();
             }
-
             if(properties.size()==0){
                 return node;
             }
 
-            node.put("type","object");
             node.put("additionalProperties", addProps);
+
             ObjectNode propertyNodes = mapper.createObjectNode();
             ArrayNode requiredArray = mapper.createArrayNode();
             for(JsonNode i : properties){
@@ -120,12 +128,13 @@ public class EoscValidator extends BaseValidator{
                 boolean extractSub = false;
                 String usedName = i.get("Name").textValue();
                 TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
-                //logger.info(propertyEntity.serialize().toString());
                 if(propertyEntity.getType().equals("InfoType")){
                     isBasic = false;
                     if(propertyEntity.getFundamentalType().equals("Object")){
-                        if(typeProperties.get("extractProperties").asBoolean()){
+                        if(typeProperties.has("extractProperties")){
+                            if(typeProperties.get("extractProperties").asBoolean()){
                             extractSub = true;
+                            }
                         }
                     }
                 }
@@ -141,11 +150,11 @@ public class EoscValidator extends BaseValidator{
                         else{
                             propertyNode.put("type", "object");
                             propertyNode.setAll(handleInfoType(propertyEntity));
-                             if(cardinality.equals("1")){
-                                requiredArray.add(usedName);
-                            }
                         }
-                    }  
+                    }
+                    if(cardinality.equals("1")){
+                        requiredArray.add(usedName);
+                    }
                 }
                 else{
                     propertyNode.put("type", "array");
@@ -162,6 +171,15 @@ public class EoscValidator extends BaseValidator{
                 if(typeProperties.has("Value")){
                     propertyNode.putPOJO("const",typeProperties.get("Value"));
                 }
+
+                if(i.has("Title")){
+                    propertyNode.put("title",i.get("Title").textValue());
+                }
+
+                if(i.has("Description")){
+                    propertyNode.put("description",i.get("Description").textValue());
+                }
+
                 if(!extractSub){
                     propertyNodes.putPOJO(usedName, propertyNode);
                 }
@@ -189,13 +207,21 @@ public class EoscValidator extends BaseValidator{
         }
         else{
             node.put("type", "array");
-            if(schema.get("maxItems").asInt()>0){
-                node.put("maxItems", schema.get("maxItems").asInt());
+            if(!schema.has("Properties")){
+                return node;
             }
-            if(schema.get("minItems").asInt()>0){
-                node.put("minItems", schema.get("minItems").asInt());
+            JsonNode arrayProps = schema.get("Properties");
+            if(arrayProps.has("maxItems")){
+                if(arrayProps.get("maxItems").asInt()>0){
+                node.put("maxItems", arrayProps.get("maxItems").asInt());
+                }
             }
-            if(schema.has("unique")){
+            if(arrayProps.has("minItems")){
+                if(arrayProps.get("minItems").asInt()>0){
+                node.put("minItems", arrayProps.get("minItems").asInt());
+                }
+            }
+            if(arrayProps.has("unique")){
                 if(schema.get("unique").asBoolean()){
                     node.put("unique", true);
                 }
