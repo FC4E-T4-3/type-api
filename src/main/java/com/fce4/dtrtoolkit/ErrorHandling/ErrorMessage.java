@@ -2,6 +2,10 @@ package com.fce4.dtrtoolkit.ErrorHandling;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.underscore.U;
+
 public class ErrorMessage {
   private int statusCode;
   private Date timestamp;
@@ -30,4 +34,15 @@ public class ErrorMessage {
   public String getDescription() {
     return description;
   }
+
+  public JsonNode serialize() {
+    ObjectMapper mapper = new ObjectMapper(); 
+    JsonNode node = mapper.convertValue(this, JsonNode.class);
+    return node;
+  }
+
+  public String toXML() {
+    return U.jsonToXml(serialize().toString());
+  }
+
 }

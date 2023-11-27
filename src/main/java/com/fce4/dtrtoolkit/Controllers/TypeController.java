@@ -41,7 +41,7 @@ public class TypeController {
     TypeService typeService;
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/types/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     @ResponseBody
     /**
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.
@@ -52,22 +52,16 @@ public class TypeController {
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode type = JsonNodeFactory.instance.objectNode(); 
         
-        //try{
-            type = typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
-        // }
-        // catch(Exception e){
-        //     return new ResponseEntity<String>(e.getMessage().toString(), responseHeaders, HttpStatus.BAD_REQUEST);
-        // }
-
-        // if(header.get("Content-Type") != null)
-        // {
-        //     String format = header.get("Content-Type").get(0);
-        //     if(format.equalsIgnoreCase("application/xml")){
-        //         responseHeaders.setContentType(MediaType.APPLICATION_XML);
-        //         //Using the https://github.com/javadev/underscore-java/ library to conver JSON to XML
-        //         return new ResponseEntity<String>(U.jsonToXml(type.toString()), responseHeaders, HttpStatus.OK);
-        //     }
-        // }
+        type = typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
+        if(header.get("Accept") != null)
+        {
+            String format = header.get("Accept").get(0);
+            if(format.equalsIgnoreCase("application/xml")){
+                responseHeaders.setContentType(MediaType.APPLICATION_XML);
+                //Using the https://github.com/javadev/underscore-java/ library to convert JSON to XML
+                return new ResponseEntity<String>(U.jsonToXml(type.toString()), responseHeaders, HttpStatus.OK);
+            }
+        }
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
     }
@@ -90,7 +84,7 @@ public class TypeController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
@@ -98,14 +92,8 @@ public class TypeController {
     public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix, @RequestBody Object payload) throws Exception {
         logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        System.out.println(payload);
-        try{
-            String response = typeService.validate(prefix + "/" + suffix, payload);
-            return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
-        }
-        catch(Exception e){
-            return new ResponseEntity<String>(e.getMessage().toString(), responseHeaders, HttpStatus.BAD_REQUEST);
-        }
+        String response = typeService.validate(prefix + "/" + suffix, payload);
+        return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
     }
     
     @CrossOrigin

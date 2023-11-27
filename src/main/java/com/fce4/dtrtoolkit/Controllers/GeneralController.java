@@ -17,8 +17,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Hidden;
 
 import com.fce4.dtrtoolkit.TypeService;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 public class GeneralController {
@@ -27,6 +30,12 @@ public class GeneralController {
 
     @Autowired
     TypeService typeService;
+
+    @Hidden
+    @RequestMapping("/")
+    public void index(HttpServletResponse response) throws IOException{
+        response.sendRedirect("swagger-ui/index.html");
+    }
     
     @CrossOrigin
     @RequestMapping(value = "/v1/decipher/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})

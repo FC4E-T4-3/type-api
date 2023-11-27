@@ -10,10 +10,10 @@ suffix="objects?query=*"
 style="legacy"
 types=["PID-BasicInfoType","PID-InfoType","KernelInformationProfile"]
 
-[DTR-Playground]
-url="https://dtr-playground.pidconsortium.eu/"
+[Typeregistry-EOSC]
+url="http://typeregistry.lab.pidconsortium.net/"
 suffix="objects?query=*"
 style="eosc"
 types=["BasicInfoType","InfoType","KernelInformationProfile"]
-units=["Basic-Unit","Derived-Unit"]
+units=["BasicUnit","DerivedUnit"]
 taxonomy=["TaxonomyNode"]
