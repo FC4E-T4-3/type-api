@@ -29,7 +29,11 @@ import com.fce4.dtrtoolkit.TypeService;
 import com.fce4.dtrtoolkit.Taxonomies.TaxonomyGraph;
 import com.github.underscore.U;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
+@Tag(name = "Taxonomies", description = "Endpoints regarding taxonomies and filtering types depending on their assigned taxonomy node.")
+
 public class TaxonomyController {
 
     @Autowired

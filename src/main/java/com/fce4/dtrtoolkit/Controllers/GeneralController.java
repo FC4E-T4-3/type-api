@@ -18,13 +18,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.fce4.dtrtoolkit.TypeService;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
-public class GeneralController {
+@Tag(name = "General", description = "General endpoints for all supported types.")public class GeneralController {
 
     Logger logger = Logger.getLogger(GeneralController.class.getName());
 
@@ -38,6 +40,20 @@ public class GeneralController {
     }
     
     @CrossOrigin
+    @RequestMapping(value = "/v1/retrieve/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    /**
+     * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
+     * explainable content
+     * @param depth true if subfields of the types should be resolved as well and not just the first layer.
+     */
+    public ResponseEntity<String> retrieve(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
+        logger.info(String.format("DECIPHER ", prefix+"/"+suffix));
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<String>("Not implemented yet.", responseHeaders, HttpStatus.OK);
+    }
+
+    @CrossOrigin
     @RequestMapping(value = "/v1/decipher/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     /**
@@ -46,9 +62,9 @@ public class GeneralController {
      * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
     public ResponseEntity<String> resolve(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
-        logger.info(String.format("Resolving ", prefix+"/"+suffix));
+        logger.info(String.format("DECIPHER ", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<String>("Resolving", responseHeaders, HttpStatus.OK);
+        return new ResponseEntity<String>("Not implemented yet.", responseHeaders, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/v1/refresh/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
