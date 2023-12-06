@@ -3,6 +3,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -13,7 +17,7 @@ import java.util.Date;
 @ComponentScan("com.fce4.dtrtoolkit.Taxonomies")
 @ComponentScan("com.fce4.dtrtoolkit")
 @EnableScheduling
-
+@OpenAPIDefinition(info = @Info(title = "TypeAPI", version = "0.0", description = "Supporting functionalities for the Typeregistry."))
 public class TypeApplication {
 	public static void main(String[] args) {
 		Date currentDate = new Date(System.currentTimeMillis());

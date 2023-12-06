@@ -27,7 +27,11 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fce4.dtrtoolkit.TypeService;
 import com.github.underscore.U;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
+@Tag(name = "Measurement Units", description = "Endpoints for the work with measurement units.")
+
 public class UnitController {
 
     @Autowired
