@@ -25,13 +25,16 @@ public class EoscValidator extends BaseValidator{
         if(!content.has("Schema")){
             return node;
         }
-        JsonNode properties = content.get("Schema").get("Properties");
+        JsonNode properties = content.get("Schema");
         String datatype = properties.get("Type").textValue().toLowerCase();
         if(datatype.equals("none")){
             return node;
         }
-
-        String propRelation = properties.get("PropRelations").textValue();
+        
+        String propRelation = "AND";
+        if(properties.has("PropRelations")){
+            properties.get("PropRelations").textValue();
+        }
         if(!properties.has("Properties")){
             node.put("type", datatype);
             return node;
@@ -94,7 +97,7 @@ public class EoscValidator extends BaseValidator{
             return node;
         }
 
-        JsonNode schema = content.get("Schema").get("Properties");
+        JsonNode schema = content.get("Schema");
         String type = schema.get("Type").textValue();
         if(type.equals("Object")){
             node.put("type","object");

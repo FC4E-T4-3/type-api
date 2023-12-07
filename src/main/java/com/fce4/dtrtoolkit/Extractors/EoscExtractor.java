@@ -119,7 +119,7 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("name").textValue());
+                    authors.add(i.get("Name").textValue());
                 }
             }
             if(provenance.has("creationDate")){
@@ -173,7 +173,7 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("name").textValue());
+                    authors.add(i.get("Name").textValue());
                 }
             }
             if(provenance.has("creationDate")){
@@ -208,9 +208,7 @@ public class EoscExtractor implements BaseExtractor {
 
         JsonNode content = type.getContent();
         if(content.has("Schema")){
-            if(content.get("Schema").has("Properties")){
-                fundamentalType = content.get("Schema").get("Properties").get("Type").textValue();
-            }
+            fundamentalType = content.get("Schema").get("Type").textValue();
         }
         type.setFundamentalType(fundamentalType);
 
@@ -221,7 +219,7 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("name").textValue());
+                    authors.add(i.get("Name").textValue());
                 }
             }
             if(provenance.has("creationDate")){
