@@ -129,7 +129,7 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    public void addType(String pid) throws Exception{
+    public void addType(String pid, String collection) throws Exception{
         logger.info(String.format("Adding Type %s to the cache", pid));
 
         String uri = "https://hdl.handle.net/" + pid + "?locatt=view:json";
@@ -163,7 +163,21 @@ public class TypeService {
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
             legacyExtractor.extractFields(typeEntity);
-            typeSearch.upsertEntry(typeEntity.serializeSearch(), "types");
+            typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
+        }
+        else if(dtrUrl.contains("typeregistry.lab.pidconsortium")){
+            if(root.get("type").textValue().equals("MeasurementUnit")){
+                UnitEntity unitEntity = eoscExtractor.createUnitEntity(root, dtrUrl);
+                typeSearch.upsertEntry(unitEntity.serializeSearch(), collection);
+            }
+            if(root.get("type").textValue().equals("TaxonomyNode")){
+                TaxonomyEntity taxonomyEntity = eoscExtractor.createTaxonomyEntity(root, dtrUrl);
+                typeSearch.upsertEntry(taxonomyEntity.serializeSearch(), collection);
+            }
+            else{
+                TypeEntity typeEntity = eoscExtractor.createTypeEntity(root, dtrUrl);
+                typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
+            }
         }
         else{
             logger.warning("PID does not describe a type or is not supported by this application.");
@@ -179,28 +193,28 @@ public class TypeService {
      * @throws IOException
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
-        checkAdd(pid, refresh);
+        checkAdd(pid, refresh, "types");
         Map<String, Object> type = typeSearch.get(pid, "types");
         TypeEntity typeEntity = new TypeEntity(type);
         return typeEntity.serialize();
     }
 
     public JsonNode getUnit(String pid, Boolean refresh) throws Exception {
-        //checkAdd(pid, refresh);
+        checkAdd(pid, refresh, "units");
         Map<String, Object> unit = typeSearch.get(pid, "units");
         UnitEntity unitEntity = new UnitEntity(unit);
         return unitEntity.serialize();
     }
 
     public JsonNode getTaxonomyNode(String pid, Boolean refresh) throws Exception {
-        //checkAdd(pid, refresh);
+        checkAdd(pid, refresh, "taxonomies");
         TaxonomyEntity taxonomyEntity = taxonomyGraph.get(pid);
         return mapper.valueToTree(taxonomyEntity.serializeSearch());
     }
 
     public JsonNode getTaxonomySubtree(String pid) throws Exception{
-        //checkAdd(pid, refresh);
-       return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
+        //checkAdd(pid, refresh, "taxonomies");
+        return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
     public ArrayList<Object> getTypesTaxonomy(String pid, Boolean getSubtree) throws Exception{        
@@ -222,7 +236,7 @@ public class TypeService {
      */
     public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
         ObjectNode root = mapper.createObjectNode();
-        checkAdd(pid, refresh);
+        checkAdd(pid, refresh, "types");
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
         String style = typeEntity.getStyle();
         switch(style){
@@ -241,10 +255,10 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public void checkAdd(String pid, Boolean refresh) throws Exception {
-        if(!typeSearch.has(pid, "types") || refresh){
+    public void checkAdd(String pid, Boolean refresh, String collection) throws Exception {
+        if(!typeSearch.has(pid, collection) || refresh){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
-            addType(pid);
+            addType(pid, collection);
         }
     }
 
