@@ -176,6 +176,7 @@ public class TypeService {
             }
             else{
                 TypeEntity typeEntity = eoscExtractor.createTypeEntity(root, dtrUrl);
+                eoscExtractor.extractTypeFields(typeEntity);
                 typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
             }
         }
@@ -213,7 +214,7 @@ public class TypeService {
     }
 
     public JsonNode getTaxonomySubtree(String pid) throws Exception{
-        //checkAdd(pid, refresh, "taxonomies");
+        checkAdd(pid, false, "taxonomies");
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 

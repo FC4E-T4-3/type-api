@@ -80,19 +80,14 @@ public class UnitController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/v1/units/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}) 
+    @RequestMapping(value = "/v1/units/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}) 
     @ResponseBody
     public ResponseEntity<String> getUnit(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception{
         logger.info(String.format("Getting Unit Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode unit = JsonNodeFactory.instance.objectNode(); 
         
-     //   try{
-            unit = typeService.getUnit(prefix+"/"+suffix, refresh.orElse(false));
-        // }
-        // catch(Exception e){
-        //     return new ResponseEntity<String>(e.getMessage().toString(), responseHeaders, HttpStatus.BAD_REQUEST);
-        // }
+        unit = typeService.getUnit(prefix+"/"+suffix, refresh.orElse(false));
 
         if(header.get("Content-Type") != null)
         {
@@ -112,6 +107,10 @@ public class UnitController {
     @ResponseBody
     public ResponseEntity<Object> getUnitTypes(@PathVariable String prefix, @PathVariable String suffix) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
+        
+        JsonNode unit = JsonNodeFactory.instance.objectNode();         
+        unit = typeService.getUnit(prefix+"/"+suffix, false);
+
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 

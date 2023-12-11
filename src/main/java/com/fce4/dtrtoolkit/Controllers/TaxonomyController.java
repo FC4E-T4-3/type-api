@@ -81,25 +81,20 @@ public class TaxonomyController {
     public ResponseEntity<Object> getTaxonomyNode(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception{
         logger.info(String.format("Retrieving taxonomy node ", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+        JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
+        taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, refresh.orElse(false));
 
-            try{
-               taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, refresh.orElse(false));
+        if(header.get("accept") != null)
+        {
+            String format = header.get("accept").get(0);
+            if(format.equalsIgnoreCase("application/xml")){
+                responseHeaders.setContentType(MediaType.APPLICATION_XML);
+                //Using the https://github.com/javadev/underscore-java/ library to conver JSON to XML
+                return new ResponseEntity<Object>(U.jsonToXml(taxonomyNode.toString()), responseHeaders, HttpStatus.OK);
             }
-            catch(Exception e){
-                throw new IOException(String.format("Requested Handle %s does not exist.", prefix+"/"+suffix));
-            }
-           if(header.get("accept") != null)
-           {
-               String format = header.get("accept").get(0);
-               if(format.equalsIgnoreCase("application/xml")){
-                   responseHeaders.setContentType(MediaType.APPLICATION_XML);
-                   //Using the https://github.com/javadev/underscore-java/ library to conver JSON to XML
-                   return new ResponseEntity<Object>(U.jsonToXml(taxonomyNode.toString()), responseHeaders, HttpStatus.OK);
-               }
-           }
-           return new ResponseEntity<Object>(taxonomyNode.toString(), responseHeaders, HttpStatus.OK);
+        }
+        return new ResponseEntity<Object>(taxonomyNode.toString(), responseHeaders, HttpStatus.OK);
     }
 
     @CrossOrigin
@@ -107,6 +102,8 @@ public class TaxonomyController {
     @ResponseBody
     public ResponseEntity<Object> getTaxonomyTypes(@PathVariable String prefix, @PathVariable String suffix, @RequestParam(defaultValue="false") Boolean subtree) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
+        JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
+        taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, false);
         final HttpHeaders responseHeaders = new HttpHeaders();
         ArrayList<Object> result = typeService.getTypesTaxonomy(prefix+"/"+suffix, subtree);
         return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
