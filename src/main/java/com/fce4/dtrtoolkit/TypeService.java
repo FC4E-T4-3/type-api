@@ -138,7 +138,7 @@ public class TypeService {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
             .GET()
-            .timeout(Duration.ofSeconds(10))
+            .timeout(Duration.ofSeconds(60))
             .uri(URI.create(uri))
             .build();
             HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
@@ -154,7 +154,7 @@ public class TypeService {
         System.out.println("SECOND REQUEST");
         request = HttpRequest.newBuilder()
             .GET()
-            .timeout(Duration.ofSeconds(10))
+            .timeout(Duration.ofSeconds(60))
             .uri(URI.create(dtrUrl + "?full=true"))
             .build();
         response = client.send(request,HttpResponse.BodyHandlers.ofString());
