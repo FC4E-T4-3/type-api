@@ -133,7 +133,7 @@ public class TypeService {
         logger.info(String.format("Adding Type %s to the cache", pid));
 
         System.out.println("FIRST REQUEST");
-        String uri = "https://hdl.handle.net/" + pid + "?locatt=view:json";
+        String uri = "http://hdl.handle.net/" + pid + "?locatt=view:json";
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
