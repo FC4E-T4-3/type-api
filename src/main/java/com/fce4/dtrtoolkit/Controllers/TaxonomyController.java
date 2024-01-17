@@ -41,7 +41,7 @@ public class TaxonomyController {
 
     @Autowired TaxonomyGraph taxonomyGraph;
     
-    Logger logger = Logger.getLogger(UnitController.class.getName());
+    Logger logger = Logger.getLogger(TaxonomyController.class.getName());
     ObjectMapper mapper = new ObjectMapper();
 
     @CrossOrigin

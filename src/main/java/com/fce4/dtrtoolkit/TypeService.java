@@ -132,7 +132,6 @@ public class TypeService {
     public void addType(String pid, String collection) throws Exception{
         logger.info(String.format("Adding Type %s to the cache", pid));
 
-        System.out.println("FIRST REQUEST");
         String uri = "http://hdl.handle.net/" + pid + "?locatt=view:json";
 
         HttpClient client = HttpClient.newHttpClient();
@@ -151,7 +150,6 @@ public class TypeService {
             throw new IOException(String.format("Requested Handle %s does not exist.", pid));
         }
         String dtrUrl = response.headers().map().get("location").get(0);
-        System.out.println("SECOND REQUEST");
         request = HttpRequest.newBuilder()
             .GET()
             .timeout(Duration.ofSeconds(60))
@@ -160,7 +158,6 @@ public class TypeService {
         response = client.send(request,HttpResponse.BodyHandlers.ofString());
 
         JsonNode root = mapper.readTree(response.body());
-
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
             legacyExtractor.extractFields(typeEntity);
@@ -169,11 +166,12 @@ public class TypeService {
         else if(dtrUrl.contains("typeregistry.lab.pidconsortium")){
             if(root.get("type").textValue().equals("MeasurementUnit")){
                 UnitEntity unitEntity = eoscExtractor.createUnitEntity(root, dtrUrl);
-                System.out.println(unitEntity.serialize());
                 typeSearch.upsertEntry(unitEntity.serializeSearch(), collection);
             }
             else if(root.get("type").textValue().equals("TaxonomyNode")){
                 TaxonomyEntity taxonomyEntity = eoscExtractor.createTaxonomyEntity(root, dtrUrl);
+                taxonomyGraph.addNode(taxonomyEntity);
+                taxonomyGraph.generateRelations();
                 typeSearch.upsertEntry(taxonomyEntity.serializeSearch(), collection);
             }
             else{
@@ -210,7 +208,7 @@ public class TypeService {
     }
 
     public JsonNode getTaxonomyNode(String pid, Boolean refresh) throws Exception {
-        checkAdd(pid, refresh, "taxonomies");
+        checkAdd(pid, refresh, "taxonomy");
         TaxonomyEntity taxonomyEntity = taxonomyGraph.get(pid);
         return mapper.valueToTree(taxonomyEntity.serializeSearch());
     }
