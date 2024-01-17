@@ -111,6 +111,7 @@ public class EoscExtractor implements BaseExtractor {
         String unitSymbol = "";
         String quantity = "";
         String quantitySymbol = "";
+        String derivation = "";
 
         JsonNode content = node.get("content");
         String name = content.get("name").textValue();
@@ -144,14 +145,15 @@ public class EoscExtractor implements BaseExtractor {
             if(unitDesc.has("Dimension Symbol")){
                 quantitySymbol = unitDesc.get("Dimension Symbol").textValue();
             }
-
+            if(unitDesc.has("Derivation")){
+                desc = unitDesc.get("Derivation").textValue();
+            }
             if(unitDesc.has("Definition")){
-                desc = unitDesc.get("Definition").textValue();
+                derivation = unitDesc.get("Definition").textValue();
             }
         }
         
-
-        return new UnitEntity(pid, type, origin, name, timestamp, desc, authors, unitSymbol, quantity, quantitySymbol);
+        return new UnitEntity(pid, type, origin, name, timestamp, desc, authors, derivation, unitSymbol, quantity, quantitySymbol);
     }
 
     public TaxonomyEntity createTaxonomyEntity(JsonNode node, String dtr){

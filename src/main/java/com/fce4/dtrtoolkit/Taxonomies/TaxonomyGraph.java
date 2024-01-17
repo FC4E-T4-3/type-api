@@ -15,6 +15,10 @@ public class TaxonomyGraph {
         taxonomy.put(t.getPid(), t);
     }
 
+    public void clear(){
+        this.taxonomy.clear();
+    }
+
     public void generateRelations(){
         for(TaxonomyEntity t : taxonomy.values()){
             for(String parent : t.getParentsString()){

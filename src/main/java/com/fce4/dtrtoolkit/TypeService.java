@@ -73,7 +73,7 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
+    @Scheduled(fixedRate = 48, timeUnit = TimeUnit.HOURS)
     public void refreshRepository() throws IOException, InterruptedException, Exception{
         logger.info("Refreshing Cache");
         typeList.clear();
@@ -81,7 +81,7 @@ public class TypeService {
         Date currentDate = new Date(System.currentTimeMillis());
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
 		System.setProperty("timestamp", df.format(currentDate));
-
+        taxonomyGraph.clear();
         TomlParseResult result = Toml.parse(Paths.get(config));
       
         for(var i : result.entrySet()){
@@ -132,6 +132,7 @@ public class TypeService {
     public void addType(String pid, String collection) throws Exception{
         logger.info(String.format("Adding Type %s to the cache", pid));
 
+        System.out.println("FIRST REQUEST");
         String uri = "https://hdl.handle.net/" + pid + "?locatt=view:json";
 
         HttpClient client = HttpClient.newHttpClient();
@@ -150,7 +151,7 @@ public class TypeService {
             throw new IOException(String.format("Requested Handle %s does not exist.", pid));
         }
         String dtrUrl = response.headers().map().get("location").get(0);
-        
+        System.out.println("SECOND REQUEST");
         request = HttpRequest.newBuilder()
             .GET()
             .timeout(Duration.ofSeconds(10))
@@ -168,9 +169,10 @@ public class TypeService {
         else if(dtrUrl.contains("typeregistry.lab.pidconsortium")){
             if(root.get("type").textValue().equals("MeasurementUnit")){
                 UnitEntity unitEntity = eoscExtractor.createUnitEntity(root, dtrUrl);
+                System.out.println(unitEntity.serialize());
                 typeSearch.upsertEntry(unitEntity.serializeSearch(), collection);
             }
-            if(root.get("type").textValue().equals("TaxonomyNode")){
+            else if(root.get("type").textValue().equals("TaxonomyNode")){
                 TaxonomyEntity taxonomyEntity = eoscExtractor.createTaxonomyEntity(root, dtrUrl);
                 typeSearch.upsertEntry(taxonomyEntity.serializeSearch(), collection);
             }

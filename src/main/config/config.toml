@@ -15,5 +15,5 @@ url="http://typeregistry.lab.pidconsortium.net/"
 suffix="objects?query=*"
 style="eosc"
 types=["BasicInfoType","InfoType","KernelInformationProfile"]
-units=["BasicUnit","DerivedUnit"]
+units=["MeasurementUnit"]
 taxonomy=["TaxonomyNode"]

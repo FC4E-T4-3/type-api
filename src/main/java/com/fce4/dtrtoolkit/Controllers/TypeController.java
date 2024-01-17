@@ -54,9 +54,10 @@ public class TypeController {
     public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         JsonNode type = JsonNodeFactory.instance.objectNode(); 
-        
         type = typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
+
         if(header.get("Accept") != null)
         {
             String format = header.get("Accept").get(0);
@@ -66,7 +67,6 @@ public class TypeController {
                 return new ResponseEntity<String>(U.jsonToXml(type.toString()), responseHeaders, HttpStatus.OK);
             }
         }
-        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
     }
 

@@ -18,10 +18,11 @@ public class UnitEntity {
     private String unitSymbol = "";
     private String quantity = "";
     private String quantitySymbol = "";
+    private String derivation = "";
 
     public UnitEntity(String pid, String type, String origin, String name, long date, 
-                        String desc, ArrayList<String> authors, String unitSymbol, 
-                        String quantity, String quantitySymbol){
+                        String desc, ArrayList<String> authors, String derivation,
+                        String unitSymbol, String quantity, String quantitySymbol){
         this.pid = pid;
         this.type = type;
         this.origin = origin;
@@ -29,6 +30,7 @@ public class UnitEntity {
         this.date = date;
         this.desc = desc;
         this.authors = authors;
+        this.derivation = derivation;
         this.unitSymbol = unitSymbol;
         this.quantity = quantity;
         this.quantitySymbol = quantitySymbol;
@@ -41,6 +43,7 @@ public class UnitEntity {
         this.name = unit.get("name").toString();
         this.date = Long.parseLong(unit.get("date").toString());
         this.desc = unit.get("description").toString();
+        this.derivation = unit.get("derivation").toString();
         this.authors = (ArrayList<String>) unit.get("authors");
         this.unitSymbol = unit.get("unitSymbol").toString();
         this.quantity = unit.get("quantity").toString();
@@ -96,6 +99,15 @@ public class UnitEntity {
         this.desc = desc;
     }
 
+    public String getDerivation() {
+        return this.desc;
+    }
+
+    public void setDerivation(String deriv) {
+        this.derivation = deriv;
+    }
+
+
     public ArrayList<String> getAuthors() {
         return this.authors;
     }
@@ -148,6 +160,7 @@ public class UnitEntity {
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
         typeSearch.put("quantity", this.quantity);
+        typeSearch.put("derivation", this.derivation);
         
         if(!"unitSymbol".equals("")){
             typeSearch.put("unitSymbol", this.unitSymbol);
