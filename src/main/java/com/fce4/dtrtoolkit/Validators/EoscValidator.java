@@ -33,7 +33,7 @@ public class EoscValidator extends BaseValidator{
         
         String propRelation = "AND";
         if(properties.has("PropRelations")){
-            properties.get("PropRelations").textValue();
+            propRelation = properties.get("PropRelations").textValue();
         }
         if(!properties.has("Properties")){
             node.put("type", datatype);
@@ -69,6 +69,7 @@ public class EoscValidator extends BaseValidator{
             }
             default: {
                 node.put("type", datatype);
+                logger.info(propRelation);
                 if(propRelation.equals("AND")){
                     for(JsonNode i : typeProperties){
                         node.putPOJO(i.get("Property").textValue(), i.get("Value"));
