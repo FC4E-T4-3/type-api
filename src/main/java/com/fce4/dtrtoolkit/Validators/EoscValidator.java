@@ -211,21 +211,18 @@ public class EoscValidator extends BaseValidator{
         }
         else{
             node.put("type", "array");
-            if(!schema.has("Properties")){
-                return node;
-            }
-            JsonNode arrayProps = schema.get("Properties");
-            if(arrayProps.has("maxItems")){
-                if(arrayProps.get("maxItems").asInt()>0){
-                node.put("maxItems", arrayProps.get("maxItems").asInt());
+            
+            if(schema.has("maxItems")){
+                if(schema.get("maxItems").asInt()>0){
+                node.put("maxItems", schema.get("maxItems").asInt());
                 }
             }
-            if(arrayProps.has("minItems")){
-                if(arrayProps.get("minItems").asInt()>0){
-                node.put("minItems", arrayProps.get("minItems").asInt());
+            if(schema.has("minItems")){
+                if(schema.get("minItems").asInt()>0){
+                node.put("minItems", schema.get("minItems").asInt());
                 }
             }
-            if(arrayProps.has("unique")){
+            if(schema.has("unique")){
                 if(schema.get("unique").asBoolean()){
                     node.put("unique", true);
                 }
