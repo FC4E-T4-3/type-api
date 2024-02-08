@@ -211,7 +211,12 @@ public class EoscValidator extends BaseValidator{
         }
         else{
             node.put("type", "array");
-            
+
+            String subCond = "";
+
+            if(schema.has("subCond")){
+                subCond = schema.get("subCond").textValue();
+            }
             if(schema.has("maxItems")){
                 if(schema.get("maxItems").asInt()>0){
                 node.put("maxItems", schema.get("maxItems").asInt());
@@ -228,8 +233,11 @@ public class EoscValidator extends BaseValidator{
                 }
             }
 
+            if(subCond.equals("")){
+                return node;
+            }
             ObjectNode propertyNode = mapper.createObjectNode();
-            TypeEntity propertyEntity = new TypeEntity(typeSearch.get((schema.get("subCond").textValue()), "types"));
+            TypeEntity propertyEntity = new TypeEntity(typeSearch.get(subCond, "types"));
             if(propertyEntity.getType().equals("BasicInfoType")){
                 propertyNode = handleBasicType(propertyEntity);
             }
