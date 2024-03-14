@@ -17,3 +17,11 @@ style="eosc"
 types=["BasicInfoType","InfoType","KernelInformationProfile"]
 units=["MeasurementUnit"]
 taxonomy=["TaxonomyNode"]
+
+[Typeregistry-TESTBED]
+url="http://typeregistry.testbed.pid.gwdg.de/"
+suffix="objects?query=*"
+style="eosc"
+types=["BasicInfoType","InfoType","KernelInformationProfile"]
+units=["MeasurementUnit"]
+taxonomy=["TaxonomyNode"]
