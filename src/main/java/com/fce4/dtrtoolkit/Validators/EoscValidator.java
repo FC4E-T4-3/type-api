@@ -21,7 +21,6 @@ public class EoscValidator extends BaseValidator{
     public ObjectNode handleBasicType(TypeEntity typeEntity){
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
-
         if(!content.has("Schema")){
             return node;
         }
@@ -69,7 +68,6 @@ public class EoscValidator extends BaseValidator{
             }
             default: {
                 node.put("type", datatype);
-                logger.info(propRelation);
                 if(propRelation.equals("AND")){
                     for(JsonNode i : typeProperties){
                         node.putPOJO(i.get("Property").textValue(), i.get("Value"));
@@ -116,7 +114,7 @@ public class EoscValidator extends BaseValidator{
             if(schema.has("subCond")){
                 subCond = schema.get("subCond").textValue();
             }
-            if(properties.size()==0){
+            if(properties.isEmpty()){
                 return node;
             }
 
@@ -148,8 +146,30 @@ public class EoscValidator extends BaseValidator{
                     }
                     else{
                         if(extractSub){
-                            ObjectNode tmp = mapper.convertValue(handleInfoType(propertyEntity).get("properties"), ObjectNode.class);
-                            propertyNodes.setAll(tmp);
+                            ObjectNode tmp = handleInfoType(propertyEntity);
+                            if(tmp.has("properties")){
+                                propertyNodes.setAll(mapper.convertValue(tmp.get("properties"), ObjectNode.class));
+                            } else if (tmp.has("allOf")) {
+                                ArrayNode allOf = propertyNodes.putArray("allOf");
+                                for(JsonNode jNode : tmp.get("allOf")){
+                                    ObjectNode oNode = mapper.readValue(jNode.toString(), ObjectNode.class);
+                                    allOf.add(oNode.get("properties"));
+                                }
+                               // propertyNodes.putPOJO("allOf", tmp.get("allOf"));
+                            } else if (tmp.has("oneOf")) {
+                                ArrayNode oneOf = propertyNodes.putArray("oneOf");
+                                for(JsonNode jNode : tmp.get("oneOf")){
+                                    ObjectNode oNode = mapper.readValue(jNode.toString(), ObjectNode.class);
+                                    oneOf.add(oNode.get("properties"));
+                                }
+                                // propertyNodes.putPOJO("allOf", tmp.get("allOf"));
+                            } else if (tmp.has("anyOf")) {
+                                ArrayNode anyOf = propertyNodes.putArray("anyOf");
+                                for(JsonNode jNode : tmp.get("anyOf")){
+                                    ObjectNode oNode = mapper.readValue(jNode.toString(), ObjectNode.class);
+                                    anyOf.add(oNode.get("properties"));
+                                }
+                            }
                         }
                         else{
                             propertyNode.put("type", "object");
@@ -166,7 +186,13 @@ public class EoscValidator extends BaseValidator{
                         propertyNode.putPOJO("items", handleBasicType(propertyEntity));
                     }
                     else{
-                        propertyNode.putPOJO("items", handleInfoType(propertyEntity));
+                        if(extractSub){
+                            logger.info(propertyNode.toString());
+                            propertyNodes.putPOJO("Info", "Extract Properties field is not compatible with arrays.");
+                        }
+                        else{
+                            propertyNode.putPOJO("items", handleInfoType(propertyEntity));
+                        }
                     }
                     if(cardinality.equals("1 - n")){
                         requiredArray.add(usedName);
@@ -185,7 +211,7 @@ public class EoscValidator extends BaseValidator{
                 }
 
                 if(!extractSub){
-                    propertyNodes.putPOJO(usedName, propertyNode);
+                        propertyNodes.putPOJO(usedName, propertyNode);
                 }
             }
 
@@ -246,7 +272,6 @@ public class EoscValidator extends BaseValidator{
             }
             node.putPOJO("items",propertyNode);
         }
-        
         return node;
     } 
     

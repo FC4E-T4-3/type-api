@@ -46,6 +46,7 @@ public class TypeSearch {
         initTypes();
         initUnits();
         initTaxonomy();
+        initMimeTypes();
     }
 
     public void initTypes() throws Exception{
@@ -113,7 +114,7 @@ public class TypeSearch {
             typeSenseClient.collections("taxonomy").retrieve();
             typeSenseClient.collections("taxonomy").delete();
         }
-        catch(Exception e) {
+        catch(Exception e){
             logger.info("Collection taxonomy did not exist yet. Creating...");
         }
 
@@ -126,6 +127,33 @@ public class TypeSearch {
 
         CollectionSchema collectionSchema = new CollectionSchema();
         collectionSchema.name("taxonomy").fields(fields).defaultSortingField("date");
+        try{
+            typeSenseClient.collections().create(collectionSchema);        
+        }
+        catch(Exception e){
+            logger.info("Collection already exists");
+        }
+    }
+
+    public void initMimeTypes() throws Exception {
+        try{
+            typeSenseClient.collections("mimetypes").retrieve();
+            typeSenseClient.collections("mimetypes").delete();
+        }
+        catch(Exception e){
+            logger.info("Collection mimetypes did not exist yet. Creating...");
+        }
+
+        List<Field> fields = new ArrayList<>();
+        fields.add(new Field().name("name").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("date").type(FieldTypes.INT64).sort(true));
+        fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
+        fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
+        fields.add(new Field().name("aliases").type(FieldTypes.STRING).infix(true));
+
+        CollectionSchema collectionSchema = new CollectionSchema();
+        collectionSchema.name("mimetypes").fields(fields).defaultSortingField("date");
         try{
             typeSenseClient.collections().create(collectionSchema);        
         }
