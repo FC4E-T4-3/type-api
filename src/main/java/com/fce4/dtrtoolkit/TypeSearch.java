@@ -28,7 +28,8 @@ public class TypeSearch {
     ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
-    public TypeSearch(@Value("${typesense.url}") String url, @Value("${typesense.port}") String port, @Value("${typesense.key}") String key) throws Exception {
+    public TypeSearch(@Value("${typesense.url}") String url, @Value("${typesense.port}") String port,
+                      @Value("${typesense.key}") String key) throws Exception {
         ArrayList<Node> nodes = new ArrayList<>();
         nodes.add(
         new Node(

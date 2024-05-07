@@ -26,7 +26,8 @@ import com.fce4.dtrtoolkit.TypeService;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
-@Tag(name = "General", description = "General endpoints for all supported types.")public class GeneralController {
+@Tag(name = "General", description = "General endpoints for all supported types.")
+public class GeneralController {
 
     Logger logger = Logger.getLogger(GeneralController.class.getName());
 
@@ -38,7 +39,10 @@ import jakarta.servlet.http.HttpServletResponse;
     public void index(HttpServletResponse response) throws IOException{
         response.sendRedirect("swagger-ui/index.html");
     }
-    
+
+    @Hidden
+    @Operation(summary = "Retrieve any registered type.",
+            description= "This includes only supported types registered in any of the supported typeregistries.")
     @CrossOrigin
     @RequestMapping(value = "/v1/retrieve/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
@@ -53,6 +57,8 @@ import jakarta.servlet.http.HttpServletResponse;
         return new ResponseEntity<String>("Not implemented yet.", responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Make an object using types as parameters human readable.",
+                description= "This supports only JSON as input as of now..")
     @CrossOrigin
     @RequestMapping(value = "/v1/decipher/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
@@ -67,6 +73,7 @@ import jakarta.servlet.http.HttpServletResponse;
         return new ResponseEntity<String>("Not implemented yet.", responseHeaders, HttpStatus.OK);
     }
 
+    @Hidden
     @RequestMapping(value = "/v1/refresh/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<String> refresh() throws Exception { 
 
@@ -76,6 +83,7 @@ import jakarta.servlet.http.HttpServletResponse;
         return new ResponseEntity<String>("success", responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Search over all kinds of registered types..")
     @CrossOrigin
     @RequestMapping(value = "/v1/search", method = RequestMethod.GET)
     @ResponseBody

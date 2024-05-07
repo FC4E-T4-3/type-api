@@ -214,7 +214,8 @@ public class TypeService {
     }
 
     public JsonNode getTaxonomySubtree(String pid) throws Exception{
-        checkAdd(pid, false, "taxonomies");
+        logger.info("HIER");
+        checkAdd(pid, false, "taxonomy");
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 

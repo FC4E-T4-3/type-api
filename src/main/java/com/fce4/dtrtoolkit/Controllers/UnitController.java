@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ public class UnitController {
     Logger logger = Logger.getLogger(UnitController.class.getName());
     ObjectMapper mapper = new ObjectMapper();
 
+    @Operation(summary = "Retrieve all registered measurement units.")
     @CrossOrigin
     @RequestMapping(value = "/v1/units/", method = RequestMethod.GET)
     @ResponseBody
@@ -60,6 +62,7 @@ public class UnitController {
         return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Search only in registered measurement units.")
     @CrossOrigin
     @RequestMapping(value = "/v1/units/search", method = RequestMethod.GET)
     @ResponseBody
@@ -79,6 +82,7 @@ public class UnitController {
         }
     }
 
+    @Operation(summary = "Retrieve a registered measurement unit via it's PID.")
     @CrossOrigin
     @RequestMapping(value = "/v1/units/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}) 
     @ResponseBody
@@ -102,6 +106,7 @@ public class UnitController {
         return new ResponseEntity<String>(unit.toString(), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Retrieve all other datatypes that are associated with the given measurement unit.")
     @CrossOrigin
     @RequestMapping(value = "/v1/units/{prefix}/{suffix}/types", method = RequestMethod.GET)
     @ResponseBody

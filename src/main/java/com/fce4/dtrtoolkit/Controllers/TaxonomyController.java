@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,7 @@ public class TaxonomyController {
     Logger logger = Logger.getLogger(TaxonomyController.class.getName());
     ObjectMapper mapper = new ObjectMapper();
 
+    @Operation(summary = "Retrieve all taxonomy nodes.")
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy", method = RequestMethod.GET)
     @ResponseBody
@@ -56,6 +58,7 @@ public class TaxonomyController {
         return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Search only in registered taxonomy nodes.")
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/search", method = RequestMethod.GET)
     @ResponseBody
@@ -75,6 +78,8 @@ public class TaxonomyController {
         }
     }
 
+    @Operation(summary = "Retrieve a single taxonomy node.",
+            description= "This includes only supported taxonomy nodes registered in any of the supported typeregistries. Includes parent and child nodes.")
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}) 
     @ResponseBody
@@ -97,6 +102,8 @@ public class TaxonomyController {
         return new ResponseEntity<Object>(taxonomyNode.toString(), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Retrieve all types that are assigned to this taxonomy node.",
+            description= "It is possible to include all types that are assigned to some taxonomy node that is hierarchically deeper in the subtree,")
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}/types", method = RequestMethod.GET)
     @ResponseBody
@@ -109,6 +116,7 @@ public class TaxonomyController {
         return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Retrieve the subtree of a taxonomy node.")
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}/subtree", method = RequestMethod.GET)
     @ResponseBody

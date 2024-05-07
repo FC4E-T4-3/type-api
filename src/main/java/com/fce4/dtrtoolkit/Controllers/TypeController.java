@@ -1,5 +1,6 @@
 package com.fce4.dtrtoolkit.Controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -34,7 +35,8 @@ import java.util.logging.Logger;
 import com.fce4.dtrtoolkit.TypeService;
 
 @RestController
-@Tag(name = "Types", description = "Endpoints related to BasicInfoTypes and InfoTypes. Creation of validation schemas and validating JSON objects against the schema for a type.")
+@Tag(name = "Types", description = "Endpoints related to BasicInfoTypes, InfoTypes and Profiles, describing schema elements. " +
+        "Creation of validation schemas and validating JSON objects against the schema for a type.")
 
 public class TypeController {
 
@@ -44,6 +46,8 @@ public class TypeController {
     @Autowired
     TypeService typeService;
 
+    @Operation(summary = "Retrieve a single schema element data type.",
+            description= "This supports as of now BasicInfoTypes, InfoTypes and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
     @RequestMapping(value = "/v1/types/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     @ResponseBody
@@ -70,6 +74,8 @@ public class TypeController {
         return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Generate a JSON schema for a data type..",
+            description= "This supports as of now BasicInfoTypes, InfoTypes and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
     @RequestMapping(value = "/v1/types/schema/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
@@ -89,6 +95,10 @@ public class TypeController {
         return new ResponseEntity<String>(node.toString(), responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Validate data against a data type.",
+            description= "This endpoints takes some input in valid JSON format, generates the validation schema for the " +
+                    "given type behind the PID and validates the data. This supports as of now BasicInfoTypes, InfoTypes" +
+                    " and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
     @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
@@ -101,7 +111,9 @@ public class TypeController {
         String response = typeService.validate(prefix + "/" + suffix, payload);
         return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
     }
-    
+
+    @Operation(summary = "Search only in types that represent schema elements.",
+            description= "This supports as of now BasicInfoTypes, InfoTypes and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
     @RequestMapping(value = "/v1/types/search/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
