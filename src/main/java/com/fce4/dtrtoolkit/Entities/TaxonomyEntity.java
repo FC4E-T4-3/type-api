@@ -1,4 +1,4 @@
-package com.fce4.dtrtoolkit.Taxonomies;
+package com.fce4.dtrtoolkit.Entities;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,111 +9,45 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class TaxonomyEntity {
-    private String pid;
-    private String type;
-    private String origin;
-    private String name = "";
-    private long date = 0;
-    private String desc = "";
+public class TaxonomyEntity extends GeneralEntity{
     private String reference = "";
-    private ArrayList<String> authors = new ArrayList<String>();
     private ArrayList<String> parentsString = new ArrayList<String>();
     private Set<TaxonomyEntity> parents = new HashSet<TaxonomyEntity>();
     private Set<TaxonomyEntity> children = new HashSet<TaxonomyEntity>();
 
     public TaxonomyEntity(String pid, String type, String origin, String name, long date, String desc, String reference, ArrayList<String> authors, ArrayList<String> parentsString, Set<TaxonomyEntity> parents, Set<TaxonomyEntity> children) {
-        this.pid = pid;
-        this.type = type;
-        this.origin = origin;
-        this.name = name;
-        this.date = date;
-        this.desc = desc;
+        this.setPid(pid);
+        this.setType(type);
+        this.setOrigin(origin);
+        this.setName(name);
         this.reference = reference;
-        this.authors = authors;
+        this.setAuthors(authors);
         this.parentsString = parentsString;
         this.parents = parents;
         this.children = children;
     }
 
     public TaxonomyEntity(String pid, String type, String origin, String name, long date, String desc, String reference, ArrayList<String> authors, ArrayList<String> parentsString) {
-        this.pid = pid;
-        this.type = type;
-        this.origin = origin;
-        this.name = name;
-        this.date = date;
-        this.desc = desc;
+        this.setPid(pid);
+        this.setType(type);
+        this.setOrigin(origin);
+        this.setName(name);
+        this.setDate(date);
+        this.setDesc(desc);
+        this.setAuthors(authors);
         this.reference = reference;
-        this.authors = authors;
         this.parentsString = parentsString;
     }
 
     public TaxonomyEntity(Map<String, Object> taxonomyEntity){
-        this.pid = taxonomyEntity.get("id").toString();
-        this.type = taxonomyEntity.get("type").toString();
-        this.origin = taxonomyEntity.get("origin").toString();
-        this.name = taxonomyEntity.get("name").toString();
-        this.date = Long.parseLong(taxonomyEntity.get("date").toString());
-        this.desc = taxonomyEntity.get("description").toString();
-        this.authors = (ArrayList<String>) taxonomyEntity.get("authors");
+        this.setPid(taxonomyEntity.get("id").toString());
+        this.setType(taxonomyEntity.get("type").toString());
+        this.setOrigin(taxonomyEntity.get("origin").toString());
+        this.setName(taxonomyEntity.get("name").toString());
+        this.setDate(Long.parseLong(taxonomyEntity.get("date").toString()));
+        this.setDesc(taxonomyEntity.get("description").toString());
+        this.setAuthors((ArrayList<String>) taxonomyEntity.get("authors"));
     }
-
-    public String getPid() {
-        return this.pid;
-    }
-
-    public void setPid(String pid) {
-        this.pid = pid;
-    }
-
-    public String getType() {
-        return this.type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getOrigin() {
-        return this.origin;
-    }
-
-    public void setOrigin(String origin) {
-        this.origin = origin;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public long getDate() {
-        return this.date;
-    }
-
-    public void setDate(long date) {
-        this.date = date;
-    }
-
-    public String getDesc() {
-        return this.desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public ArrayList<String> getAuthors() {
-        return this.authors;
-    }
-
-    public void setAuthors(ArrayList<String> authors) {
-        this.authors = authors;
-    }
-
     public  ArrayList<String> getParentsString() {
         return this.parentsString;
     }
@@ -165,16 +99,6 @@ public class TaxonomyEntity {
             "}";
     }
 
-    /**
-     * Serializes a UnitObject to a JsonNode object. The setters and getters are required for the mapper.
-     * @return a JsonNode representing the TaxonomyObject.
-     */
-    public JsonNode serialize() {
-        ObjectMapper mapper = new ObjectMapper(); 
-        JsonNode node = mapper.convertValue(this, JsonNode.class);
-        return node;
-    }
-
     public HashMap<String,Object> serializeSearch() throws Exception {
         HashMap<String,String> parents = new HashMap<String,String>();
         HashMap<String,String> children = new HashMap<String,String>();
@@ -187,14 +111,14 @@ public class TaxonomyEntity {
         }
 
         HashMap<String, Object> typeSearch = new HashMap<>();
-        typeSearch.put("id", this.pid);
-        typeSearch.put("name", this.name);
-        typeSearch.put("type", this.type);
-        typeSearch.put("date", this.date);
+        typeSearch.put("id", this.getPid());
+        typeSearch.put("name", this.getName());
+        typeSearch.put("type", this.getType());
+        typeSearch.put("date", this.getDate());
         typeSearch.put("reference", this.reference);
-        typeSearch.put("description", this.desc);
-        typeSearch.put("origin", this.origin);
-        typeSearch.put("authors", this.authors.toArray(new String[0]));
+        typeSearch.put("description", this.getDesc());
+        typeSearch.put("origin", this.getOrigin());
+        typeSearch.put("authors", this.getAuthors().toArray(new String[0]));
         typeSearch.put("parents", parents);
         typeSearch.put("children", children);
 
