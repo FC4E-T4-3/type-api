@@ -92,6 +92,7 @@ public class TypeService {
                 String dtr = i.getKey();
                 ArrayList<Object> units = new ArrayList<Object>();
                 ArrayList<Object> taxonomy = new ArrayList<Object>();
+                ArrayList<Object> general = new ArrayList<Object>();
 				String url = t.getString("url");
 				String suffix = t.getString("suffix");
 				List<Object> types = t.getArray("types").toList();
@@ -104,6 +105,10 @@ public class TypeService {
                     taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
                 }
 
+                if(t.contains("general")){
+                    general = new ArrayList<Object>(t.getArray("general").toList());
+                }
+
                 logger.info(String.format("extracting %s", url));
 
                 switch(style){
@@ -111,7 +116,7 @@ public class TypeService {
                         legacyExtractor.extractTypes(url+suffix, types, dtr);
                         break;
                     case "eosc":
-                        eoscExtractor.extractTypes(url+suffix, types, units, taxonomy, dtr);
+                        eoscExtractor.extractTypes(url+suffix, types, units, taxonomy, general, dtr);
                         break;
                     default:
                         logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));

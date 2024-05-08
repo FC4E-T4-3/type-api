@@ -16,12 +16,13 @@ public class GeneralEntity {
     private String desc = "";
     private ArrayList<String> authors = new ArrayList<String>();
     private ArrayList<String> aliases = new ArrayList<String>();
+    private ArrayList<String> taxonomies = new ArrayList<String>();
 
     public GeneralEntity(){
 
     }
 
-    public GeneralEntity(String pid, String type, String origin, String name, long date, String desc, ArrayList<String> authors, ArrayList<String> aliases) {
+    public GeneralEntity(String pid, String type, String origin, String name, long date, String desc, ArrayList<String> authors, ArrayList<String> aliases, ArrayList<String> taxonomies) {
         this.pid = pid;
         this.type = type;
         this.origin = origin;
@@ -30,6 +31,9 @@ public class GeneralEntity {
         this.desc = desc;
         this.authors = authors;
         this.aliases = aliases;
+        if(!taxonomies.isEmpty()){
+            this.taxonomies = taxonomies;
+        }
     }
 
     public GeneralEntity(Map<String, Object> node) {
@@ -38,6 +42,7 @@ public class GeneralEntity {
         this.type = node.get("type").toString();
         this.authors = (ArrayList<String>) node.get("authors");
         this.aliases = (ArrayList<String>) node.get("aliases");
+        this.taxonomies = (ArrayList<String>) node.get("taxonomies");
         this.date = Long.parseLong(node.get("date").toString());
         this.desc = node.get("description").toString();
         this.name = node.get("name").toString();
@@ -108,6 +113,14 @@ public class GeneralEntity {
         this.aliases = aliases;
     }
 
+    public ArrayList<String> getTaxonomies() {
+        return this.taxonomies;
+    }
+
+    public void setTaxonomies(ArrayList<String> taxonomies) {
+        this.taxonomies = taxonomies;
+    }
+
     /**
      * Serializes an EntityObject to a JsonNode object. The setters and getters are required for the mapper.
      * @return a JsonNode representing the EntityObject.
@@ -128,7 +141,8 @@ public class GeneralEntity {
         typeSearch.put("description", this.desc);
         typeSearch.put("origin", this.origin);
         typeSearch.put("authors", this.authors.toArray(new String[0]));
-        typeSearch.put("aliases", this.aliases.toArray(new String[0]));
+        typeSearch.put("aliases", this.getAliases().toArray(new String[0]));
+        typeSearch.put("taxonomies", this.getTaxonomies().toArray(new String[0]));
         return typeSearch;
     }
 }

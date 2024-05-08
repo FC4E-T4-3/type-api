@@ -1,10 +1,12 @@
 package com.fce4.dtrtoolkit.Controllers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class GeneralController {
 
     Logger logger = Logger.getLogger(GeneralController.class.getName());
+    ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     TypeService typeService;
@@ -87,10 +90,19 @@ public class GeneralController {
     @CrossOrigin
     @RequestMapping(value = "/v1/search", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
-        logger.info("Searching for...");
+    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+        logger.info(String.format("Searching %s in the fields %s.", query, queryBy.toString()));
+        filterBy.remove("query");
+        filterBy.remove("queryBy");
+        filterBy.remove("infix");
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<Object>("Not implemented.", responseHeaders, HttpStatus.OK);
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+            ArrayList<Object> result = typeService.search(query, queryBy, filterBy, "general", infix);
+            return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<Object>("FilterBy or QueryBy field does not exist or is not indexed.", responseHeaders, HttpStatus.NOT_FOUND);
+        }
     }
-    
 }

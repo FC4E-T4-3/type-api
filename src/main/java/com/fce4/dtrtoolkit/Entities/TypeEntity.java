@@ -54,14 +54,6 @@ public class TypeEntity extends GeneralEntity{
         this.style = style;
     }
 
-    public ArrayList<String> getTaxonomies() {
-        return this.taxonomies;
-    }
-
-    public void setTaxonomies(ArrayList<String> taxonomies) {
-        this.taxonomies = taxonomies;
-    }
-
     public JsonNode getContent() {
         return this.content;
     }
