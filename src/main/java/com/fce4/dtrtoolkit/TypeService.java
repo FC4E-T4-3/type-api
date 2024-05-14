@@ -203,28 +203,28 @@ public class TypeService {
      * @throws IOException
      */
     public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
-        checkAdd(pid, refresh, "types");
+        checkAdd(pid, refresh, false, "types");
         Map<String, Object> type = typeSearch.get(pid, "types");
         TypeEntity typeEntity = new TypeEntity(type);
         return typeEntity.serialize();
     }
 
     public JsonNode getUnit(String pid, Boolean refresh) throws Exception {
-        checkAdd(pid, refresh, "units");
+        checkAdd(pid, refresh, false, "units");
         Map<String, Object> unit = typeSearch.get(pid, "units");
         UnitEntity unitEntity = new UnitEntity(unit);
         return unitEntity.serialize();
     }
 
     public JsonNode getTaxonomyNode(String pid, Boolean refresh) throws Exception {
-        checkAdd(pid, refresh, "taxonomy");
+        checkAdd(pid, refresh, false, "taxonomy");
         TaxonomyEntity taxonomyEntity = taxonomyGraph.get(pid);
         return mapper.valueToTree(taxonomyEntity.serializeSearch());
     }
 
     public JsonNode getTaxonomySubtree(String pid) throws Exception{
         logger.info("HIER");
-        checkAdd(pid, false, "taxonomy");
+        checkAdd(pid, false, false,"taxonomy");
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
@@ -245,9 +245,9 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
+    public ObjectNode getValidation(String pid, Boolean refresh, Boolean refreshChildren) throws Exception {
         ObjectNode root = mapper.createObjectNode();
-        checkAdd(pid, refresh, "types");
+        checkAdd(pid, refresh, refreshChildren, "types");
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
         String style = typeEntity.getStyle();
         switch(style){
@@ -263,41 +263,55 @@ public class TypeService {
 
     /**
      * Helper function avoiding repeated code. Adds a PID to the repo if conditions demand it.
+     * If desired or necessary, refresh all children types (For schema elements)
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
+     * @param refreshChildren flag, if type's children should be refreshed
      */
-    public void checkAdd(String pid, Boolean refresh, String collection) throws Exception {
-        if(!typeSearch.has(pid, collection) || refresh){
+    public void checkAdd(String pid, Boolean refresh, Boolean refreshChildren, String collection) throws Exception {
+        if(!typeSearch.has(pid, collection)){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
+            if(collection.equals("types")){
+                addAllChildren(pid);
+            }
+            else{
+                addType(pid, collection);
+            }
+        } else if(refresh){
             addType(pid, collection);
-//            if(collection.equals("types")){
-//                refreshAllProperties(pid);
-//            }
+        }
+        else if(refreshChildren){
+            if(collection.equals("types")){
+                addAllChildren(pid);
+            }
+            else{
+                addType(pid, collection);
+            }
         }
     }
 
-//    public void refreshAllProperties(String pid) throws Exception {
-//        Stack<String> types = new Stack<String>();
-//        types.push(pid);
-//        boolean infoTypes = true;
-//        while(infoTypes){
-//            getAllChildren(pid)
-//        }
-//    }
-//
-//    public ArrayList<String> getAllChildren(String pid){
-//        Map<String, Object> type = typeSearch.get(pid, "types");
-//        ObjectNode node = mapper.valueToTree(type.get("content"));
-//        ArrayNode properties = mapper.valueToTree(node.get("Schema").get("Properties"));
-//        ArrayList<String> children = new ArrayList<String>();
-//        for(JsonNode i : properties){
-//            children.add(i.get("Type").toString());
-//        }
-//    }
+    /**
+     * Recursively refresh/add all children of a schema element type
+     * @param pid the PID to add/refresh in the cache.
+     */
+    public void addAllChildren(String pid) throws Exception{
+        addType(pid, "types");
+        Map<String, Object> type = typeSearch.get(pid, "types");
+        ObjectNode node = mapper.valueToTree(type.get("content"));
+        if(node.has("Schema")){
+            if(node.get("Schema").has("Properties")){
+                ArrayNode properties = mapper.valueToTree(node.get("Schema").get("Properties"));
+                for(JsonNode i : properties){
+                    if(i.has("Type")){
+                        addAllChildren(i.get("Type").textValue());
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Search for types in the repository with a query.
-     * @param identifier the PID to add/refresh in the cache.
      */
     public ArrayList<Object> search(String query, String[] queryBy, Map<String,String> filterBy, String collection, Boolean infix) throws Exception{
         return typeSearch.search(query, queryBy, filterBy, collection, infix);
@@ -311,7 +325,7 @@ public class TypeService {
      */
     public String validate(String pid, Object object) throws Exception{
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        JsonSchema schema = factory.getSchema(getValidation(pid,false).toString());
+        JsonSchema schema = factory.getSchema(getValidation(pid,false, false).toString());
         JsonNode node = mapper.valueToTree(object);
         Set<ValidationMessage> errors = schema.validate(node);
         if(errors.size()>0){

@@ -83,10 +83,10 @@ public class TypeController {
      * Returns the JSON validation schema for a type. 
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh) throws Exception {
+    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestParam Optional<Boolean> refreshChildren) throws Exception {
         logger.info(String.format("Getting Validation Schema for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false));
+        ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false), refreshChildren.orElse(false));
         //Neccessary to clean the JSON string, since Java escapes already escaped characters.
         logger.info(node.toString());
         //String cleaned = node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\").replace("\\\\", "\\");
