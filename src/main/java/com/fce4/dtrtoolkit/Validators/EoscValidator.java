@@ -46,6 +46,17 @@ public class EoscValidator extends BaseValidator{
                 }
                 else{
                     ArrayNode arrayNode = node.putArray("enum");
+                    switch (enumType){
+                        case "String Enum":
+                            node.put("type","string");
+                            break;
+                        case "Integer Enum":
+                            node.put("type","integer");
+                            break;
+                        case "Number Enum":
+                            node.put("type","number");
+                            break;
+                    }
                     for(JsonNode i : enumValues){
                         arrayNode.add(i);
                     }

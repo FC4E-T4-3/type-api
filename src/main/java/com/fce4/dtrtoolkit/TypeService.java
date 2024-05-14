@@ -2,6 +2,7 @@ package com.fce4.dtrtoolkit;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fce4.dtrtoolkit.Entities.TypeEntity;
 import com.fce4.dtrtoolkit.Entities.UnitEntity;
@@ -11,6 +12,7 @@ import com.fce4.dtrtoolkit.Entities.TaxonomyEntity;
 import com.fce4.dtrtoolkit.Taxonomies.TaxonomyGraph;
 import com.fce4.dtrtoolkit.Validators.EoscValidator;
 import com.fce4.dtrtoolkit.Validators.LegacyValidator;
+import com.github.underscore.Json;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
@@ -268,8 +270,30 @@ public class TypeService {
         if(!typeSearch.has(pid, collection) || refresh){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
             addType(pid, collection);
+//            if(collection.equals("types")){
+//                refreshAllProperties(pid);
+//            }
         }
     }
+
+//    public void refreshAllProperties(String pid) throws Exception {
+//        Stack<String> types = new Stack<String>();
+//        types.push(pid);
+//        boolean infoTypes = true;
+//        while(infoTypes){
+//            getAllChildren(pid)
+//        }
+//    }
+//
+//    public ArrayList<String> getAllChildren(String pid){
+//        Map<String, Object> type = typeSearch.get(pid, "types");
+//        ObjectNode node = mapper.valueToTree(type.get("content"));
+//        ArrayNode properties = mapper.valueToTree(node.get("Schema").get("Properties"));
+//        ArrayList<String> children = new ArrayList<String>();
+//        for(JsonNode i : properties){
+//            children.add(i.get("Type").toString());
+//        }
+//    }
 
     /**
      * Search for types in the repository with a query.
