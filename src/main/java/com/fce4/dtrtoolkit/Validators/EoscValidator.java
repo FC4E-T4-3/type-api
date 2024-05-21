@@ -207,8 +207,8 @@ public class EoscValidator extends BaseValidator{
                         requiredArray.add(usedName);
                     }
                 }
-                if(typeProperties.has("Value")){
-                    propertyNode.putPOJO("const",typeProperties.get("Value"));
+                if(typeProperties.has("Const Value")){
+                    propertyNode.putPOJO("const",typeProperties.get("Const Value"));
                 }
 
                 if(i.has("Title")){
