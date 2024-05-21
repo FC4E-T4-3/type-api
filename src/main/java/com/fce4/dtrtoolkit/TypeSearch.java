@@ -171,9 +171,6 @@ public class TypeSearch {
     public void upsertList(ArrayList<HashMap<String, Object>> typeList, String collection) throws Exception {
         ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
         importDocumentsParameters.action("upsert");
-        if(collection.equals("general")){
-            System.out.println(typeList);
-        }
         typeSenseClient.collections(collection).documents().import_(typeList, importDocumentsParameters);
     }
 
