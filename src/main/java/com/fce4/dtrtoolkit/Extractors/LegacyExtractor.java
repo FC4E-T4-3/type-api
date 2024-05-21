@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fce4.dtrtoolkit.TypeEntity;
+import com.fce4.dtrtoolkit.Entities.TypeEntity;
 import com.fce4.dtrtoolkit.TypeSearch;
 
 @Component

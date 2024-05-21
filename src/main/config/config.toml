@@ -17,3 +17,4 @@ style="eosc"
 types=["BasicInfoType","InfoType","KernelInformationProfile"]
 units=["MeasurementUnit"]
 taxonomy=["TaxonomyNode"]
+general=["ExtendedMimeType"]

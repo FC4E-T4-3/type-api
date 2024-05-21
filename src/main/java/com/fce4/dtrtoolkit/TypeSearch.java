@@ -47,7 +47,7 @@ public class TypeSearch {
         initTypes();
         initUnits();
         initTaxonomy();
-        initMimeTypes();
+        initGeneralTypes();
     }
 
     public void initTypes() throws Exception{
@@ -136,13 +136,13 @@ public class TypeSearch {
         }
     }
 
-    public void initMimeTypes() throws Exception {
+    public void initGeneralTypes() throws Exception {
         try{
-            typeSenseClient.collections("mimetypes").retrieve();
-            typeSenseClient.collections("mimetypes").delete();
+            typeSenseClient.collections("general").retrieve();
+            typeSenseClient.collections("general").delete();
         }
         catch(Exception e){
-            logger.info("Collection mimetypes did not exist yet. Creating...");
+            logger.info("Collection general did not exist yet. Creating...");
         }
 
         List<Field> fields = new ArrayList<>();
@@ -151,10 +151,11 @@ public class TypeSearch {
         fields.add(new Field().name("authors").type(FieldTypes.STRING_ARRAY).facet(true).infix(true));
         fields.add(new Field().name("description").type(FieldTypes.STRING).infix(true));
         fields.add(new Field().name("origin").type(FieldTypes.STRING).facet(true));
-        fields.add(new Field().name("aliases").type(FieldTypes.STRING).infix(true));
+        fields.add(new Field().name("aliases").type(FieldTypes.STRING_ARRAY).infix(true));
+        fields.add(new Field().name("taxonomies").type(FieldTypes.STRING_ARRAY).facet(true));
 
         CollectionSchema collectionSchema = new CollectionSchema();
-        collectionSchema.name("mimetypes").fields(fields).defaultSortingField("date");
+        collectionSchema.name("general").fields(fields).defaultSortingField("date");
         try{
             typeSenseClient.collections().create(collectionSchema);        
         }
@@ -165,7 +166,6 @@ public class TypeSearch {
 
     public void upsertEntry(HashMap<String, Object> type, String collection) throws Exception{
         typeSenseClient.collections(collection).documents().upsert(type);
-        return;
     }
 
     public void upsertList(ArrayList<HashMap<String, Object>> typeList, String collection) throws Exception {
@@ -176,7 +176,6 @@ public class TypeSearch {
 
     /**
      * Search for types in the repository with a query.
-     * @param identifier the PID to add/refresh in the cache.
      */
     public ArrayList<Object> search(String query, String[] queryBy, Map<String,String> filterBy, String collection, Boolean infix) throws Exception{
         ArrayList<Object> resultList = new ArrayList<Object> ();

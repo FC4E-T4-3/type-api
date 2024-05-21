@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import com.fce4.dtrtoolkit.TypeEntity;
+import com.fce4.dtrtoolkit.Entities.TypeEntity;
 
 /**
  * The class used to generate validation schemas for legacy types, which are types from the old GWDG DTR's

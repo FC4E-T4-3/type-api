@@ -2,13 +2,17 @@ package com.fce4.dtrtoolkit;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fce4.dtrtoolkit.Entities.TypeEntity;
+import com.fce4.dtrtoolkit.Entities.UnitEntity;
 import com.fce4.dtrtoolkit.Extractors.EoscExtractor;
 import com.fce4.dtrtoolkit.Extractors.LegacyExtractor;
-import com.fce4.dtrtoolkit.Taxonomies.TaxonomyEntity;
+import com.fce4.dtrtoolkit.Entities.TaxonomyEntity;
 import com.fce4.dtrtoolkit.Taxonomies.TaxonomyGraph;
 import com.fce4.dtrtoolkit.Validators.EoscValidator;
 import com.fce4.dtrtoolkit.Validators.LegacyValidator;
+import com.github.underscore.Json;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
@@ -90,6 +94,7 @@ public class TypeService {
                 String dtr = i.getKey();
                 ArrayList<Object> units = new ArrayList<Object>();
                 ArrayList<Object> taxonomy = new ArrayList<Object>();
+                ArrayList<Object> general = new ArrayList<Object>();
 				String url = t.getString("url");
 				String suffix = t.getString("suffix");
 				List<Object> types = t.getArray("types").toList();
@@ -102,6 +107,10 @@ public class TypeService {
                     taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
                 }
 
+                if(t.contains("general")){
+                    general = new ArrayList<Object>(t.getArray("general").toList());
+                }
+
                 logger.info(String.format("extracting %s", url));
 
                 switch(style){
@@ -109,7 +118,7 @@ public class TypeService {
                         legacyExtractor.extractTypes(url+suffix, types, dtr);
                         break;
                     case "eosc":
-                        eoscExtractor.extractTypes(url+suffix, types, units, taxonomy, dtr);
+                        eoscExtractor.extractTypes(url+suffix, types, units, taxonomy, general, dtr);
                         break;
                     default:
                         logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
@@ -193,29 +202,28 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
-        checkAdd(pid, refresh, "types");
+    public JsonNode getDescription(String pid, Boolean refresh, Boolean refreshChildren) throws Exception{
+        checkAdd(pid, refresh, refreshChildren, "types");
         Map<String, Object> type = typeSearch.get(pid, "types");
         TypeEntity typeEntity = new TypeEntity(type);
         return typeEntity.serialize();
     }
 
     public JsonNode getUnit(String pid, Boolean refresh) throws Exception {
-        checkAdd(pid, refresh, "units");
+        checkAdd(pid, refresh, false, "units");
         Map<String, Object> unit = typeSearch.get(pid, "units");
         UnitEntity unitEntity = new UnitEntity(unit);
         return unitEntity.serialize();
     }
 
     public JsonNode getTaxonomyNode(String pid, Boolean refresh) throws Exception {
-        checkAdd(pid, refresh, "taxonomy");
+        checkAdd(pid, refresh, false, "taxonomy");
         TaxonomyEntity taxonomyEntity = taxonomyGraph.get(pid);
         return mapper.valueToTree(taxonomyEntity.serializeSearch());
     }
 
     public JsonNode getTaxonomySubtree(String pid) throws Exception{
-        logger.info("HIER");
-        checkAdd(pid, false, "taxonomy");
+        checkAdd(pid, false, false,"taxonomy");
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
@@ -236,9 +244,9 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
      */
-    public ObjectNode getValidation(String pid, Boolean refresh) throws Exception {
+    public ObjectNode getValidation(String pid, Boolean refresh, Boolean refreshChildren) throws Exception {
         ObjectNode root = mapper.createObjectNode();
-        checkAdd(pid, refresh, "types");
+        checkAdd(pid, refresh, refreshChildren, "types");
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
         String style = typeEntity.getStyle();
         switch(style){
@@ -252,21 +260,70 @@ public class TypeService {
         return root;
     }
 
+    public String getMimeString(String pid) throws Exception{
+        JsonNode type = mapper.valueToTree(typeSearch.get(pid, "general"));
+        if(type.get("type").textValue().equals("ExtendedMimeType")){
+            return type.get("name").textValue();
+        }
+        return "Selected Type is not a valid Extended MIME Type.";
+    }
+
     /**
      * Helper function avoiding repeated code. Adds a PID to the repo if conditions demand it.
+     * If desired or necessary, refresh all children types (For schema elements)
      * @param pid the PID to add/refresh in the cache.
      * @param refresh flag, if type should be refreshed
+     * @param refreshChildren flag, if type's children should be refreshed
      */
-    public void checkAdd(String pid, Boolean refresh, String collection) throws Exception {
-        if(!typeSearch.has(pid, collection) || refresh){
+    public void checkAdd(String pid, Boolean refresh, Boolean refreshChildren, String collection) throws Exception {
+        if(!typeSearch.has(pid, collection)){
             logger.info(String.format("Retrieving pid %s via handle and caching...", pid));
+            if(collection.equals("types")){
+                addAllChildren(pid);
+            }
+            else{
+                addType(pid, collection);
+            }
+        } else if(refresh){
             addType(pid, collection);
+        }
+        else if(refreshChildren){
+            if(collection.equals("types")){
+                addAllChildren(pid);
+            }
+            else{
+                addType(pid, collection);
+            }
         }
     }
 
     /**
+     * Recursively refresh/add all children of a schema element type
+     * @param pid the PID to add/refresh in the cache.
+     */
+    public void addAllChildren(String pid) throws Exception{
+        addType(pid, "types");
+        Map<String, Object> type = typeSearch.get(pid, "types");
+        ObjectNode node = mapper.valueToTree(type.get("content"));
+        if(node.has("Schema")){
+            if(node.get("Schema").has("Properties")){
+                ArrayNode properties = mapper.valueToTree(node.get("Schema").get("Properties"));
+                for(JsonNode i : properties){
+                    if(i.has("Type")){
+                        addAllChildren(i.get("Type").textValue());
+                    }
+                }
+            }
+        }
+    }
+
+    public JsonNode retrieve(String pid, String collection) throws Exception{
+        //Map<String, Object> type = typeSearch.get(pid, collection);
+        return mapper.valueToTree(typeSearch.get(pid, collection));
+    }
+
+    /**
      * Search for types in the repository with a query.
-     * @param identifier the PID to add/refresh in the cache.
      */
     public ArrayList<Object> search(String query, String[] queryBy, Map<String,String> filterBy, String collection, Boolean infix) throws Exception{
         return typeSearch.search(query, queryBy, filterBy, collection, infix);
@@ -278,9 +335,10 @@ public class TypeService {
      * @param object The JSON object that is to be validated
      * @throws Exception
      */
-    public String validate(String pid, Object object) throws Exception{
+    public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception{
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        JsonSchema schema = factory.getSchema(getValidation(pid,false).toString());
+        checkAdd(pid, refresh, refreshChildren, "types");
+        JsonSchema schema = factory.getSchema(getValidation(pid,false, false).toString());
         JsonNode node = mapper.valueToTree(object);
         Set<ValidationMessage> errors = schema.validate(node);
         if(errors.size()>0){

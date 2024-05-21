@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
+import com.fce4.dtrtoolkit.Entities.TaxonomyEntity;
 import org.springframework.stereotype.Component;
 
 @Component
