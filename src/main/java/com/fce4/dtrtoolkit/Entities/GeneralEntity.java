@@ -17,12 +17,13 @@ public class GeneralEntity {
     private ArrayList<String> authors = new ArrayList<String>();
     private ArrayList<String> aliases = new ArrayList<String>();
     private ArrayList<String> taxonomies = new ArrayList<String>();
+    private Object source;
 
     public GeneralEntity(){
 
     }
 
-    public GeneralEntity(String pid, String type, String origin, String name, long date, String desc, ArrayList<String> authors, ArrayList<String> aliases, ArrayList<String> taxonomies) {
+    public GeneralEntity(String pid, String type, String origin, String name, long date, String desc, ArrayList<String> authors, ArrayList<String> aliases, ArrayList<String> taxonomies, Object source) {
         this.pid = pid;
         this.type = type;
         this.origin = origin;
@@ -34,6 +35,7 @@ public class GeneralEntity {
         if(!taxonomies.isEmpty()){
             this.taxonomies = taxonomies;
         }
+        this.source = source;
     }
 
     public GeneralEntity(Map<String, Object> node) {
@@ -47,6 +49,15 @@ public class GeneralEntity {
         this.desc = node.get("description").toString();
         this.name = node.get("name").toString();
         this.origin = node.get("origin").toString();
+        this.source = node.get("source");
+    }
+
+    public Object getSource() {
+        return source;
+    }
+
+    public void setSource(Object source) {
+        this.source = source;
     }
 
     public String getPid() {
@@ -143,6 +154,7 @@ public class GeneralEntity {
         typeSearch.put("authors", this.authors.toArray(new String[0]));
         typeSearch.put("aliases", this.getAliases().toArray(new String[0]));
         typeSearch.put("taxonomies", this.getTaxonomies().toArray(new String[0]));
+        typeSearch.put("source", this.source);
         return typeSearch;
     }
 }

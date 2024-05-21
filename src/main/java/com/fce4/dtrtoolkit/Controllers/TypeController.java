@@ -55,12 +55,11 @@ public class TypeController {
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception {
+    public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestParam Optional<Boolean> refreshChildren, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
-        JsonNode type = JsonNodeFactory.instance.objectNode(); 
-        type = typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false));
+        JsonNode type = typeService.getDescription(prefix+"/"+suffix, refresh.orElse(false), refreshChildren.orElse(false));
 
         if(header.get("Accept") != null)
         {
@@ -105,10 +104,10 @@ public class TypeController {
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
      */
-    public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix, @RequestBody Object payload) throws Exception {
+    public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix, @RequestBody Object payload, @RequestParam Optional<Boolean> refresh, @RequestParam Optional<Boolean> refreshChildren) throws Exception {
         logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
-        String response = typeService.validate(prefix + "/" + suffix, payload);
+        String response = typeService.validate(prefix + "/" + suffix, payload, refresh.orElse(false), refreshChildren.orElse(false));
         return new ResponseEntity<String>(response, responseHeaders, HttpStatus.OK);
     }
 

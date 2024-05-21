@@ -6,19 +6,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.github.underscore.U;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,7 +40,6 @@ public class GeneralController {
         response.sendRedirect("swagger-ui/index.html");
     }
 
-    @Hidden
     @Operation(summary = "Retrieve any registered type.",
             description= "This includes only supported types registered in any of the supported typeregistries.")
     @CrossOrigin
@@ -54,10 +50,21 @@ public class GeneralController {
      * explainable content
      * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
-    public ResponseEntity<String> retrieve(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
-        logger.info(String.format("DECIPHER ", prefix+"/"+suffix));
+    public ResponseEntity<String> retrieve(@PathVariable String prefix, @PathVariable String suffix, @RequestHeader HttpHeaders header) throws Exception {
         final HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<String>("Not implemented yet.", responseHeaders, HttpStatus.OK);
+        responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+        JsonNode type = typeService.retrieve(prefix+"/"+suffix, "general");
+
+        if(header.get("Accept") != null)
+        {
+            String format = header.get("Accept").get(0);
+            if(format.equalsIgnoreCase("application/xml")){
+                responseHeaders.setContentType(MediaType.APPLICATION_XML);
+                //Using the https://github.com/javadev/underscore-java/ library to convert JSON to XML
+                return new ResponseEntity<String>(U.jsonToXml(type.toString()), responseHeaders, HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
     }
 
     @Operation(summary = "Make an object using types as parameters human readable.",
@@ -78,12 +85,20 @@ public class GeneralController {
 
     @Hidden
     @RequestMapping(value = "/v1/refresh/", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<String> refresh() throws Exception { 
+    public ResponseEntity<String> refresh() throws Exception {
 
         typeService.refreshRepository();
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>("success", responseHeaders, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/v1/mime/string/{prefix}/{suffix}", method = RequestMethod.GET)
+    public ResponseEntity<String> mimeString(@PathVariable String prefix, @PathVariable String suffix) throws Exception {
+
+        String mimeString = typeService.getMimeString(prefix + "/" + suffix);
+        final HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<String>(mimeString, responseHeaders, HttpStatus.OK);
     }
 
     @Operation(summary = "Search over all kinds of registered types..")

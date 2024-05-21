@@ -162,7 +162,7 @@ public class EoscExtractor implements BaseExtractor {
             }
         }
 
-        return new GeneralEntity(pid, type, origin, name, timestamp, desc, authors, aliases, taxonomies);
+        return new GeneralEntity(pid, type, origin, name, timestamp, desc, authors, aliases, taxonomies, node);
     }
 
     public UnitEntity createUnitEntity(JsonNode node, String dtr) {

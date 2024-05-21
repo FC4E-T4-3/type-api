@@ -202,8 +202,8 @@ public class TypeService {
      * @throws InterruptedException
      * @throws IOException
      */
-    public JsonNode getDescription(String pid, Boolean refresh) throws Exception{
-        checkAdd(pid, refresh, false, "types");
+    public JsonNode getDescription(String pid, Boolean refresh, Boolean refreshChildren) throws Exception{
+        checkAdd(pid, refresh, refreshChildren, "types");
         Map<String, Object> type = typeSearch.get(pid, "types");
         TypeEntity typeEntity = new TypeEntity(type);
         return typeEntity.serialize();
@@ -223,7 +223,6 @@ public class TypeService {
     }
 
     public JsonNode getTaxonomySubtree(String pid) throws Exception{
-        logger.info("HIER");
         checkAdd(pid, false, false,"taxonomy");
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
@@ -259,6 +258,14 @@ public class TypeService {
                 break;
         }
         return root;
+    }
+
+    public String getMimeString(String pid) throws Exception{
+        JsonNode type = mapper.valueToTree(typeSearch.get(pid, "general"));
+        if(type.get("type").textValue().equals("ExtendedMimeType")){
+            return type.get("name").textValue();
+        }
+        return "Selected Type is not a valid Extended MIME Type.";
     }
 
     /**
@@ -310,6 +317,11 @@ public class TypeService {
         }
     }
 
+    public JsonNode retrieve(String pid, String collection) throws Exception{
+        //Map<String, Object> type = typeSearch.get(pid, collection);
+        return mapper.valueToTree(typeSearch.get(pid, collection));
+    }
+
     /**
      * Search for types in the repository with a query.
      */
@@ -323,8 +335,9 @@ public class TypeService {
      * @param object The JSON object that is to be validated
      * @throws Exception
      */
-    public String validate(String pid, Object object) throws Exception{
+    public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception{
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+        checkAdd(pid, refresh, refreshChildren, "types");
         JsonSchema schema = factory.getSchema(getValidation(pid,false, false).toString());
         JsonNode node = mapper.valueToTree(object);
         Set<ValidationMessage> errors = schema.validate(node);
