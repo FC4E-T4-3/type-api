@@ -196,7 +196,6 @@ public class EoscValidator extends BaseValidator{
                     }
                     else{
                         if(extractSub){
-                            logger.info(propertyNode.toString());
                             propertyNodes.putPOJO("Info", "Extract Properties field is not compatible with arrays.");
                         }
                         else{
@@ -208,7 +207,24 @@ public class EoscValidator extends BaseValidator{
                     }
                 }
                 if(typeProperties.has("Const Value")){
-                    propertyNode.putPOJO("const",typeProperties.get("Const Value"));
+                    logger.info(propertyNode.toString());
+                    if(propertyNode.has("type")){
+                        String typeString = propertyNode.get("type").textValue();
+                        switch (typeString){
+                            case "number":
+                                propertyNode.put("const",typeProperties.get("Const Value").asDouble());
+                                break;
+                            case "integer":
+                                propertyNode.put("const",typeProperties.get("Const Value").asInt());
+                                break;
+                            case "boolean":
+                                propertyNode.put("const",typeProperties.get("Const Value").asBoolean());
+                                break;
+                            default:
+                                propertyNode.putPOJO("const",typeProperties.get("Const Value"));
+                                break;
+                        }
+                    }
                 }
 
                 if(i.has("Title")){
