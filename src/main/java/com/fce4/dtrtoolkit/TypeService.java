@@ -236,7 +236,7 @@ public class TypeService {
         else{
             filterBy.put("taxonomies", pid);
         }
-        return search("*", new String[]{"name"}, filterBy, "types", true);
+        return search("*", new String[]{"name"}, filterBy, "general", true);
     }
 
     /**
