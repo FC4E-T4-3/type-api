@@ -136,7 +136,9 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("Name").textValue());
+                    if(i.has("Name")){
+                        authors.add(i.get("Name").textValue());
+                    }
                 }
             }
             if(provenance.has("creationDate")){
@@ -185,7 +187,9 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("Name").textValue());
+                    if(i.has("Name")) {
+                        authors.add(i.get("Name").textValue());
+                    }
                 }
             }
             if(provenance.has("creationDate")){
@@ -240,7 +244,9 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("Name").textValue());
+                    if(i.has("Name")) {
+                        authors.add(i.get("Name").textValue());
+                    }
                 }
             }
             if(provenance.has("creationDate")){
@@ -286,7 +292,9 @@ public class EoscExtractor implements BaseExtractor {
             JsonNode provenance = content.get("provenance");
             if(provenance.has("contributors")){
                 for(JsonNode i : provenance.get("contributors")){
-                    authors.add(i.get("Name").textValue());
+                    if(i.has("Name")){
+                        authors.add(i.get("Name").textValue());
+                    }
                 }
             }
             if(provenance.has("creationDate")){
