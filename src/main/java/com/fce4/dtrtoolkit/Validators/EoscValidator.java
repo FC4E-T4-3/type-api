@@ -207,7 +207,6 @@ public class EoscValidator extends BaseValidator{
                     }
                 }
                 if(typeProperties.has("Const Value")){
-                    logger.info(propertyNode.toString());
                     if(propertyNode.has("type")){
                         String typeString = propertyNode.get("type").textValue();
                         switch (typeString){
@@ -239,7 +238,6 @@ public class EoscValidator extends BaseValidator{
                         propertyNodes.putPOJO(usedName, propertyNode);
                 }
             }
-
             if(requiredArray.size()>0){
                 node.putPOJO("required", requiredArray);
             }
@@ -251,9 +249,7 @@ public class EoscValidator extends BaseValidator{
                     ObjectNode tmp = mapper.createObjectNode();
                     ObjectNode tmpProps = mapper.createObjectNode();
                     Map.Entry<String, JsonNode> entry = fieldsIterator.next();
-                    tmp.putPOJO(entry.getKey(), entry.getValue());
-                    tmpProps.putPOJO("properties", tmp);
-                    oneOfNode.addPOJO(tmpProps);
+                    oneOfNode.add(entry.getValue());
                 }
             }
             else{
