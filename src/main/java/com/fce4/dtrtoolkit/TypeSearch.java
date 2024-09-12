@@ -1,6 +1,7 @@
 package com.fce4.dtrtoolkit;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -227,5 +228,11 @@ public class TypeSearch {
         catch(Exception e) {
             return false;
         }
+    }
+
+    public ArrayList<Object> getAllTypes(String collection) throws Exception{
+        String[] q = {"name"};
+        Map<String,String> fb = new HashMap<String, String>();
+        return search("*", q, fb , collection, false);
     }
 }

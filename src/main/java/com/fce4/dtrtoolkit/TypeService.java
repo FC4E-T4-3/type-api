@@ -56,6 +56,7 @@ public class TypeService {
 
     @Autowired
     private LegacyExtractor legacyExtractor;
+
     @Autowired
     private EoscExtractor eoscExtractor;
 
@@ -99,6 +100,7 @@ public class TypeService {
 				String suffix = t.getString("suffix");
 				List<Object> types = t.getArray("types").toList();
 				String style = t.getString("style");
+
                 if(t.contains("units")){
                     units = new ArrayList<Object>(t.getArray("units").toList());
                 }
@@ -128,6 +130,7 @@ public class TypeService {
             	logger.warning(e.toString());
             }
         }
+
         logger.info("Refreshing Cache successful.");
     }
 
@@ -249,13 +252,14 @@ public class TypeService {
         checkAdd(pid, refresh, refreshChildren, "types");
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
         String style = typeEntity.getStyle();
-        switch(style){
-            case "legacy":
-                root = legacyValidator.validation(pid);
-                break;
-            case "eosc":
-                root = eoscValidator.validation(pid);
-                break;
+        try{
+            root = switch (style) {
+                case "legacy" -> legacyValidator.validation(pid);
+                case "eosc" -> eoscValidator.validation(pid);
+                default -> root;
+            };
+        } catch (Exception e) {
+            throw new Exception(e);
         }
         return root;
     }
