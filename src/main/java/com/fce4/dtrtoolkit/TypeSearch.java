@@ -165,7 +165,7 @@ public class TypeSearch {
         }
     }
 
-    public void upsertEntry(HashMap<String, Object> type, String collection) throws Exception{
+    public void upsertEntry(Map<String, Object> type, String collection) throws Exception{
         typeSenseClient.collections(collection).documents().upsert(type);
     }
 

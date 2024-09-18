@@ -13,7 +13,7 @@ import com.fce4.dtrtoolkit.Entities.TypeEntity;
 
 @Component
 public class EoscValidator extends BaseValidator{
-    
+
     Logger logger = Logger.getLogger(EoscValidator.class.getName());
 
     public ObjectNode handleBasicType(TypeEntity typeEntity){
@@ -27,7 +27,7 @@ public class EoscValidator extends BaseValidator{
         if(datatype.equals("none")){
             return node;
         }
-        
+
         String propRelation = "AND";
         if(properties.has("PropRelations")){
             propRelation = properties.get("PropRelations").textValue();
@@ -92,7 +92,7 @@ public class EoscValidator extends BaseValidator{
                     }
                 }
                 break;
-            }              
+            }
         }
         return node;
     }
@@ -116,7 +116,7 @@ public class EoscValidator extends BaseValidator{
             JsonNode properties = schema.get("Properties");
             boolean addProps = false;
             String subCond = "";
- 
+
             if(schema.has("addProps")){
                 addProps = schema.get("addProps").asBoolean();
             }
@@ -294,10 +294,18 @@ public class EoscValidator extends BaseValidator{
             node.putPOJO("items",propertyNode);
         }
         return node;
-    } 
-    
+    }
+
     public ObjectNode validation(String pid) throws Exception{
-        TypeEntity type = new TypeEntity(typeSearch.get(pid, "types"));
+        Map<String, Object> typeFromSearch = typeSearch.get(pid, "types");
+        String data = mapper.writeValueAsString(typeFromSearch);
+        JsonNode obj = mapper.readTree(data);
+
+        if(obj.has("schema")){
+            return obj.get("schema").deepCopy();
+        }
+
+        TypeEntity type = new TypeEntity(typeFromSearch);
         ObjectNode root = mapper.createObjectNode();
 
         if(type.getType().equals("BasicInfoType")){

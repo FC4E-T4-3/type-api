@@ -87,7 +87,6 @@ public class TypeController {
         final HttpHeaders responseHeaders = new HttpHeaders();
         ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false), refreshChildren.orElse(false));
         //Neccessary to clean the JSON string, since Java escapes already escaped characters.
-        logger.info(node.toString());
         //String cleaned = node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\").replace("\\\\", "\\");
         //logger.info(cleaned);
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
