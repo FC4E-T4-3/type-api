@@ -79,60 +79,93 @@ public class TypeService {
      * @throws IOException
      */
     @Scheduled(fixedRate = 48, timeUnit = TimeUnit.HOURS)
-    public void refreshRepository() throws IOException, InterruptedException, Exception{
-        logger.info("Refreshing Cache");
-        typeList.clear();
-        //Setting a new timestamp, should a new logfile be necessary
-        Date currentDate = new Date(System.currentTimeMillis());
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
-		System.setProperty("timestamp", df.format(currentDate));
-        taxonomyGraph.clear();
-        TomlParseResult result = Toml.parse(Paths.get(config));
-      
-        for(var i : result.entrySet()){
-			try {
-				TomlTable t = TomlTable.class.cast(i.getValue());
-                String dtr = i.getKey();
-                ArrayList<Object> units = new ArrayList<Object>();
-                ArrayList<Object> taxonomy = new ArrayList<Object>();
-                ArrayList<Object> general = new ArrayList<Object>();
-				String url = t.getString("url");
-				String suffix = t.getString("suffix");
-				List<Object> types = t.getArray("types").toList();
-				String style = t.getString("style");
+    public void refreshRepository() throws IOException, InterruptedException, Exception {
+        try {
+            logger.info("Refreshing Cache");
+            typeList.clear();
+            Date currentDate = new Date(System.currentTimeMillis());
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
+            System.setProperty("timestamp", df.format(currentDate));
+            taxonomyGraph.clear();
+            TomlParseResult result = Toml.parse(Paths.get(config));
 
-                if(t.contains("units")){
-                    units = new ArrayList<Object>(t.getArray("units").toList());
+            for (var i : result.entrySet()) {
+                try {
+                    TomlTable t = TomlTable.class.cast(i.getValue());
+                    String dtr = i.getKey();
+                    ArrayList<Object> units = new ArrayList<Object>();
+                    ArrayList<Object> taxonomy = new ArrayList<Object>();
+                    ArrayList<Object> general = new ArrayList<Object>();
+                    String url = t.getString("url");
+                    String suffix = t.getString("suffix");
+                    List<Object> types = t.getArray("types").toList();
+                    String style = t.getString("style");
+
+                    if (t.contains("units")) {
+                        units = new ArrayList<Object>(t.getArray("units").toList());
+                    }
+
+                    if (t.contains("taxonomy")) {
+                        taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
+                    }
+
+                    if (t.contains("general")) {
+                        general = new ArrayList<Object>(t.getArray("general").toList());
+                    }
+
+                    logger.info(String.format("extracting %s", url));
+
+                    switch (style) {
+                        case "legacy":
+                            legacyExtractor.extractTypes(url + suffix, types, dtr);
+                            break;
+                        case "eosc":
+                            eoscExtractor.extractTypes(url + suffix, types, units, taxonomy, general, dtr);
+                            break;
+                        default:
+                            logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
+                            break;
+                    }
+                } catch (Exception e) {
+                    logger.warning(e.toString());
                 }
+            }
 
-                if(t.contains("taxonomy")){
-                    taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
+            cacheSchemas();
+
+            logger.info("Refreshing Cache successful.");
+        } catch (Exception e) {
+            logger.severe("Unexpected error occurred in scheduled task: " + e.getMessage());
+        }
+    }
+
+    public void cacheSchemas() throws Exception {
+        ArrayList<Object> allTypes = typeSearch.getAllTypes("types");
+        ArrayList<String> blacklist = new ArrayList<>();
+
+        int n = allTypes.size();
+        int counter = 1;
+        for (Object i : allTypes) {
+            try {
+                JsonNode obj = mapper.readTree(i.toString());
+                String style = obj.get("style").textValue();
+                if (style.equals("eosc")) {
+                    String id = obj.get("id").toString().replace("\"", "");
+                    cacheSchema(id);
                 }
-
-                if(t.contains("general")){
-                    general = new ArrayList<Object>(t.getArray("general").toList());
-                }
-
-                logger.info(String.format("extracting %s", url));
-
-                switch(style){
-                    case "legacy":
-                        legacyExtractor.extractTypes(url+suffix, types, dtr);
-                        break;
-                    case "eosc":
-                        eoscExtractor.extractTypes(url+suffix, types, units, taxonomy, general, dtr);
-                        break;
-                    default:
-                        logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
-                        break;
-                }
-			} catch (Exception e) {
-            	logger.warning(e.toString());
+            } catch (Exception e) {
+                logger.warning("Error caching schema: " + e.getMessage());
             }
         }
-
-        logger.info("Refreshing Cache successful.");
     }
+
+    public void cacheSchema(String pid) throws Exception{
+        ObjectNode schema = getValidation(pid, false, false);
+        Map<String, Object> type = typeSearch.get(pid, "types");
+        type.put("schema", schema);
+        typeSearch.upsertEntry(type, "types");
+    }
+
 
     /**
      * Adds a single data type to the repository. Either for selective refreshing, or to add valid types not in the configured DTR's.
@@ -190,6 +223,7 @@ public class TypeService {
                 TypeEntity typeEntity = eoscExtractor.createTypeEntity(root, dtrUrl);
                 eoscExtractor.extractTypeFields(typeEntity);
                 typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
+                cacheSchema(typeEntity.getPid());
             }
         }
         else{
