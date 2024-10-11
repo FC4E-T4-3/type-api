@@ -13,7 +13,7 @@ import com.fce4.dtrtoolkit.Entities.TypeEntity;
 
 @Component
 public class EoscValidator extends BaseValidator{
-    
+
     Logger logger = Logger.getLogger(EoscValidator.class.getName());
 
     public ObjectNode handleBasicType(TypeEntity typeEntity){
@@ -27,7 +27,7 @@ public class EoscValidator extends BaseValidator{
         if(datatype.equals("none")){
             return node;
         }
-        
+
         String propRelation = "AND";
         if(properties.has("PropRelations")){
             propRelation = properties.get("PropRelations").textValue();
@@ -92,7 +92,7 @@ public class EoscValidator extends BaseValidator{
                     }
                 }
                 break;
-            }              
+            }
         }
         return node;
     }
@@ -116,7 +116,7 @@ public class EoscValidator extends BaseValidator{
             JsonNode properties = schema.get("Properties");
             boolean addProps = false;
             String subCond = "";
- 
+
             if(schema.has("addProps")){
                 addProps = schema.get("addProps").asBoolean();
             }
