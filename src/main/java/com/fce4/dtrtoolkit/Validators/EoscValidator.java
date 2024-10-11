@@ -294,10 +294,18 @@ public class EoscValidator extends BaseValidator{
             node.putPOJO("items",propertyNode);
         }
         return node;
-    } 
-    
+    }
+
     public ObjectNode validation(String pid) throws Exception{
-        TypeEntity type = new TypeEntity(typeSearch.get(pid, "types"));
+        Map<String, Object> typeFromSearch = typeSearch.get(pid, "types");
+        String data = mapper.writeValueAsString(typeFromSearch);
+        JsonNode obj = mapper.readTree(data);
+
+        if(obj.has("schema")){
+            return obj.get("schema").deepCopy();
+        }
+
+        TypeEntity type = new TypeEntity(typeFromSearch);
         ObjectNode root = mapper.createObjectNode();
 
         if(type.getType().equals("BasicInfoType")){
@@ -308,11 +316,14 @@ public class EoscValidator extends BaseValidator{
         }
 
         //Inserting common fields 'title', 'description' and '$schema'. Description optional.
-        root.put("description", String.format("Validation schema for type '%s' with the PID '%s'",
-            type.getContent().get("name").textValue(), type.getPid()));
         if(type.getContent().has("description")){
             root.put("description", type.getContent().get("description").textValue());
         }
+        else{
+            root.put("description", String.format("Validation schema for type '%s' with the PID '%s'",
+                    type.getContent().get("name").textValue(), type.getPid()));
+        }
+        root.put("title", type.getContent().get("name").textValue());
         root.put("$schema", "http://json-schema.org/draft-04/schema#");
 
         return root;
