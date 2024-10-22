@@ -223,7 +223,6 @@ public class TypeService {
                 TypeEntity typeEntity = eoscExtractor.createTypeEntity(root, dtrUrl);
                 eoscExtractor.extractTypeFields(typeEntity);
                 typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
-                cacheSchema(typeEntity.getPid());
             }
         }
         else{
@@ -322,8 +321,10 @@ public class TypeService {
             else{
                 addType(pid, collection);
             }
+            cacheSchema(pid);
         } else if(refresh){
             addType(pid, collection);
+            cacheSchema(pid);
         }
         else if(refreshChildren){
             if(collection.equals("types")){
@@ -332,6 +333,7 @@ public class TypeService {
             else{
                 addType(pid, collection);
             }
+            cacheSchema(pid);
         }
     }
 
