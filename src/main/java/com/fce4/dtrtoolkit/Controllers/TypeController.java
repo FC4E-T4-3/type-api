@@ -46,7 +46,7 @@ public class TypeController {
     @Autowired
     TypeService typeService;
 
-    @Operation(summary = "Retrieve a single schema element data type.",
+    @Operation(summary = "Retrieve a single data type or profile.",
             description= "This supports as of now BasicInfoTypes, InfoTypes and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
     @RequestMapping(value = "/v1/types/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
@@ -73,7 +73,7 @@ public class TypeController {
         return new ResponseEntity<String>(type.toString(), responseHeaders, HttpStatus.OK);
     }
 
-    @Operation(summary = "Generate a JSON schema for a data type..",
+    @Operation(summary = "Generate a JSON schema for a data type or profile.",
             description= "This supports as of now BasicInfoTypes, InfoTypes and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
     @RequestMapping(value = "/v1/types/schema/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
