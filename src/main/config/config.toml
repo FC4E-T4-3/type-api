@@ -1,5 +1,5 @@
 [Typeregistry-EOSC]
-url="http://typeregistry.lab.pidconsortium.net/"
+url="https://typeregistry.lab.pidconsortium.net/"
 suffix="objects?query=*"
 style="eosc"
 types=["BasicInfoType","InfoType","Profile"]
