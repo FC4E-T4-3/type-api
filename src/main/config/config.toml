@@ -11,10 +11,10 @@ style="legacy"
 types=["PID-BasicInfoType","PID-InfoType","KernelInformationProfile"]
 
 [Typeregistry-EOSC]
-url="http://typeregistry.lab.pidconsortium.net/"
+url="https://typeregistry.lab.pidconsortium.net/"
 suffix="objects?query=*"
 style="eosc"
-types=["BasicInfoType","InfoType","KernelInformationProfile"]
+types=["BasicInfoType","InfoType","Profile"]
 units=["MeasurementUnit"]
 taxonomy=["TaxonomyNode"]
 general=["ExtendedMimeType"]

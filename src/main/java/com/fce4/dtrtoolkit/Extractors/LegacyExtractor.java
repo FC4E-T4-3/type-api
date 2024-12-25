@@ -29,7 +29,7 @@ public class LegacyExtractor implements BaseExtractor {
     @Autowired
     private TypeSearch typeSearch;
     
-    public void extractTypes(String url, List<Object> types, String dtr) throws Exception{
+    public void extractTypes(String url, List<Object> types, String origin) throws Exception{
         int counter = 0;
         HttpRequest request = HttpRequest.newBuilder()
             .GET()
@@ -46,24 +46,23 @@ public class LegacyExtractor implements BaseExtractor {
                 continue;
             }
             if(types.contains(jsonNode.get("type").textValue())){
-                TypeEntity typeEntity = createEntity(jsonNode, dtr);
+                TypeEntity typeEntity = createEntity(jsonNode, origin);
                 extractFields(typeEntity);
                 typeList.add(typeEntity.serializeSearch());
                 counter+=1;
             }
         }
         typeSearch.upsertList(typeList, "types");
-        logger.info(String.format("Added %s types from DTR '%s'.", counter, dtr));
+        logger.info(String.format("Added %s types from DTR '%s'.", counter, origin));
     }
 
-    public TypeEntity createEntity(JsonNode node, String dtr) {
+    public TypeEntity createEntity(JsonNode node, String origin) {
         String pid = node.get("id").textValue();
         String prefix = pid.split("/")[0];
         String type = node.get("type").textValue();
         JsonNode content = node.get("content");
         String style = "legacy";
         String name = node.get("content").get("name").textValue();
-        String origin = dtr;
         return new TypeEntity(pid, prefix, type, content, style, origin, name);
     }
 
@@ -93,6 +92,5 @@ public class LegacyExtractor implements BaseExtractor {
             }
         }
         type.setAuthors(authors);
-        return;
     }
 }

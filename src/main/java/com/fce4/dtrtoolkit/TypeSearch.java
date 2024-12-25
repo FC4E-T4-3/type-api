@@ -1,7 +1,6 @@
 package com.fce4.dtrtoolkit;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

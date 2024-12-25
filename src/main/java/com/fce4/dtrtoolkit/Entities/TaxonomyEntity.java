@@ -48,6 +48,7 @@ public class TaxonomyEntity extends GeneralEntity{
         this.setDesc(taxonomyEntity.get("description").toString());
         this.setAuthors((ArrayList<String>) taxonomyEntity.get("authors"));
     }
+
     public  ArrayList<String> getParentsString() {
         return this.parentsString;
     }

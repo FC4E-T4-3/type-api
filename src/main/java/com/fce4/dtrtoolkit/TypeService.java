@@ -67,6 +67,7 @@ public class TypeService {
     
     Logger logger = Logger.getLogger(TypeService.class.getName());
 
+
     @PostConstruct
     public void init() throws IOException, InterruptedException, Exception{
         logger.info(new File(".").getAbsolutePath());
@@ -83,6 +84,8 @@ public class TypeService {
         try {
             logger.info("Refreshing Cache");
             typeList.clear();
+            logger.info("Refreshing Indexer");
+            typeSearch.initTypesense();
             Date currentDate = new Date(System.currentTimeMillis());
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
             System.setProperty("timestamp", df.format(currentDate));
@@ -117,10 +120,10 @@ public class TypeService {
 
                     switch (style) {
                         case "legacy":
-                            legacyExtractor.extractTypes(url + suffix, types, dtr);
+                            legacyExtractor.extractTypes(url + suffix, types, url);
                             break;
                         case "eosc":
-                            eoscExtractor.extractTypes(url + suffix, types, units, taxonomy, general, dtr);
+                            eoscExtractor.extractTypes(url + suffix, types, units, taxonomy, general, url);
                             break;
                         default:
                             logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
@@ -141,10 +144,7 @@ public class TypeService {
 
     public void cacheSchemas() throws Exception {
         ArrayList<Object> allTypes = typeSearch.getAllTypes("types");
-        ArrayList<String> blacklist = new ArrayList<>();
 
-        int n = allTypes.size();
-        int counter = 1;
         for (Object i : allTypes) {
             try {
                 JsonNode obj = mapper.readTree(i.toString());
@@ -176,31 +176,48 @@ public class TypeService {
      */
     public void addType(String pid, String collection) throws Exception{
         logger.info(String.format("Adding Type %s to the cache", pid));
+        String dtrUrl = "";
+        HttpClient client = HttpClient.newHttpClient();;
+        HttpRequest request;
+        HttpResponse<String> response;
 
-        String uri = "http://hdl.handle.net/" + pid + "?locatt=view:json";
+        //Check if the type is already in the cache. If yes, just fetch it from the DTR. Otherwise, the long way via Handle must be taken.
+        if(typeSearch.has(pid, collection)){
+            TypeEntity type = new TypeEntity(typeSearch.get(pid, collection));
+            String uri = type.getOrigin() + "/objects/" + pid + "?full=true";
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .timeout(Duration.ofSeconds(60))
-            .uri(URI.create(uri))
-            .build();
-            HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
-
-        /*After the first request, we receive the URL to the type in its DTR. Since we need the full specification, the parameter "?full"
-        needs to be set to true to get all the information necessary. Thus, the second request.*/
-        
-        if(!response.headers().map().containsKey("location")){
-            logger.warning(String.format("Requested Handle %s does not exist", pid));
-            throw new IOException(String.format("Requested Handle %s does not exist.", pid));
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(uri))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
         }
-        String dtrUrl = response.headers().map().get("location").get(0);
-        request = HttpRequest.newBuilder()
-            .GET()
-            .timeout(Duration.ofSeconds(60))
-            .uri(URI.create(dtrUrl + "?full=true"))
-            .build();
-        response = client.send(request,HttpResponse.BodyHandlers.ofString());
+        else{
+            String uri = "http://hdl.handle.net/" + pid + "?locatt=view:json";
+
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(uri))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
+
+            /*After the first request, we receive the URL to the type in its DTR. Since we need the full specification, the parameter "?full"
+            needs to be set to true to get all the information necessary. Thus, the second request.*/
+
+            if(!response.headers().map().containsKey("location")){
+                logger.warning(String.format("Requested Handle %s does not exist", pid));
+                throw new IOException(String.format("Requested Handle %s does not exist.", pid));
+            }
+            dtrUrl = response.headers().map().get("location").get(0);
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(dtrUrl + "?full=true"))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
+        }
 
         JsonNode root = mapper.readTree(response.body());
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
@@ -263,7 +280,7 @@ public class TypeService {
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
-    public ArrayList<Object> getTypesTaxonomy(String pid, Boolean getSubtree) throws Exception{        
+    public ArrayList<Object> getTypesTaxonomy(String pid, Boolean getSubtree) throws Exception{
         Map<String, String> filterBy = new HashMap<String, String>();
         if(getSubtree){
             Set<String> subtree = taxonomyGraph.getSubtreePIDs(pid);
@@ -322,18 +339,23 @@ public class TypeService {
                 addType(pid, collection);
             }
             cacheSchema(pid);
-        } else if(refresh){
-            addType(pid, collection);
-            cacheSchema(pid);
         }
-        else if(refreshChildren){
-            if(collection.equals("types")){
-                addAllChildren(pid);
+        else{
+            if(refreshChildren){
+                if(collection.equals("types")){
+                    addAllChildren(pid);
+                }
+                else{
+                    addType(pid, collection);
+                }
+                cacheSchema(pid);
+                return;
             }
-            else{
+            if(refresh){
                 addType(pid, collection);
+                cacheSchema(pid);
+                return;
             }
-            cacheSchema(pid);
         }
     }
 
