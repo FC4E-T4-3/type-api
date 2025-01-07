@@ -59,7 +59,7 @@ typesense.key=xyz
 ```
 
 ### Via Docker Compose
-You can also simply use the provided `docker-compose.yml` file to run the service and a typesense instance. The docker image for the TypeAPI is stored in the GitHub Container Registry: `ghcr.io/fc4e-t4-3/dtr-toolkit:latest`. So if you want a simple setup, just run `docker-compose up`in the same folder as the `docker-compose.yml` to start the containers.
+You can also simply use the provided `docker-compose.yml` file to run the service and a typesense instance. The docker image for the TypeAPI is stored in the GitHub Container Registry: `ghcr.io/fc4e-t4-3/dtr-toolkit:latest`. So if you want a simple setup, just run `docker compose up`in the same folder as the `docker-compose.yml` to start the containers.
 ## Usage
 Once the application is running, you can access the Swagger UI at http://localhost:8080.
 
