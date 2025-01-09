@@ -19,7 +19,7 @@ public class EoscValidator extends BaseValidator{
     public ObjectNode handleBasicType(TypeEntity typeEntity){
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
-        node.put("@id", content.get("Identifier").textValue());
+        node.put("@id", typeEntity.getPid());
         if(!content.has("Schema")){
             return node;
         }
@@ -101,7 +101,7 @@ public class EoscValidator extends BaseValidator{
     public ObjectNode handleInfoType(TypeEntity typeEntity) throws Exception {
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
-        node.put("@id", content.get("Identifier").textValue());
+        node.put("@id", typeEntity.getPid());
 
         if(!content.has("Schema")){
             return node;
