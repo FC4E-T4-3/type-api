@@ -146,24 +146,25 @@ public class TypeService {
         ArrayList<Object> allTypes = typeSearch.getAllTypes("types");
 
         for (Object i : allTypes) {
+            JsonNode obj = mapper.readTree(i.toString());
             try {
-                JsonNode obj = mapper.readTree(i.toString());
                 String style = obj.get("style").textValue();
                 if (style.equals("eosc")) {
                     String id = obj.get("id").toString().replace("\"", "");
                     cacheSchema(id);
                 }
             } catch (Exception e) {
-                logger.warning("Error caching schema: " + e.getMessage());
+                logger.warning("Error caching schema: " + obj.get("id").toString().replace("\"", "") + e.getMessage());
+                //logger.warning(i.toString());
             }
         }
     }
 
     public void cacheSchema(String pid) throws Exception{
         ObjectNode schema = getValidation(pid, false, false);
-        Map<String, Object> type = typeSearch.get(pid, "types");
-        type.put("schema", schema);
-        typeSearch.upsertEntry(type, "types");
+//        Map<String, Object> type = typeSearch.get(pid, "types");
+//        type.put("schema", schema);
+//        typeSearch.upsertEntry(type, "types");
     }
 
 
