@@ -110,7 +110,6 @@ public class EoscValidator extends BaseValidator{
         JsonNode schema = content.get("Schema");
         String type = schema.get("Type").textValue();
         if(type.equals("Object")){
-            node.put("type","object");
 
             if(!schema.has("Properties")){
                 return node;
@@ -255,6 +254,7 @@ public class EoscValidator extends BaseValidator{
                 }
             }
             else{
+                node.put("type","object");
                 node.putPOJO("properties", propertyNodes);
             }
         }
