@@ -339,17 +339,14 @@ public class LegacyValidator extends BaseValidator {
                 break;
 
 			case ONE_OF:
-				node.put("type", "object");
 				node.set("oneOf", arrayFromObject(propertyNode));
                 break;
 
 			case ALL_OF:
-				node.put("type", "object");
 				node.set("allOf", arrayFromObject(propertyNode));
                 break;
 
 			case ANY_OF:
-				node.put("type", "object");
 				node.set("anyOf", arrayFromObject(propertyNode));
                 break;
 
