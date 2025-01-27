@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fce4.dtrtoolkit.Entities.GeneralEntity;
 import com.fce4.dtrtoolkit.Entities.TypeEntity;
 import com.fce4.dtrtoolkit.Entities.UnitEntity;
 import com.fce4.dtrtoolkit.Extractors.EoscExtractor;
@@ -184,13 +185,12 @@ public class TypeService {
 
         //Check if the type is already in the cache. If yes, just fetch it from the DTR. Otherwise, the long way via Handle must be taken.
         if(typeSearch.has(pid, collection)){
-            TypeEntity type = new TypeEntity(typeSearch.get(pid, collection));
-            String uri = type.getOrigin() + "/objects/" + pid + "?full=true";
-
+            GeneralEntity type = new GeneralEntity(typeSearch.get(pid, "general"));
+            dtrUrl = type.getOrigin() + "objects/" + pid + "?full=true";
             request = HttpRequest.newBuilder()
                     .GET()
                     .timeout(Duration.ofSeconds(60))
-                    .uri(URI.create(uri))
+                    .uri(URI.create(dtrUrl))
                     .build();
             response = client.send(request,HttpResponse.BodyHandlers.ofString());
         }
@@ -354,8 +354,9 @@ public class TypeService {
             }
             if(refresh){
                 addType(pid, collection);
-                cacheSchema(pid);
-                return;
+                if(collection.equals("types")){
+                    cacheSchema(pid);
+                }
             }
         }
     }
