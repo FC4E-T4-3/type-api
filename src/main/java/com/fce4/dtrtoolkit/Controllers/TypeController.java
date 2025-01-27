@@ -1,6 +1,7 @@
 package com.fce4.dtrtoolkit.Controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -55,7 +56,20 @@ public class TypeController {
      * Returns the description of a type. Per default, JSON is returned, but via the http header XML can be requested.
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> desc(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestParam Optional<Boolean> refreshChildren, @RequestHeader HttpHeaders header) throws Exception {
+    public ResponseEntity<String> desc(
+            @PathVariable
+            @Parameter(description = "The prefix of the Type PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Type PID", example = "db605a11c81e79e1efc4", required = true)
+            String suffix,
+
+            @Parameter(description = "Whether to refresh the Type to include changes recently made in the DTR, recaching it.")
+            @RequestParam Optional<Boolean> refresh,
+
+            @Parameter(description = "Whether to refresh the Properties of the Type, if available, to include changes recently made in the DTR, recaching them.")
+            @RequestParam Optional<Boolean> refreshChildren, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -82,7 +96,21 @@ public class TypeController {
      * Returns the JSON validation schema for a type. 
      * @param refresh if the requested PID should be refreshed in the cache.
      */
-    public ResponseEntity<String> validation(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestParam Optional<Boolean> refreshChildren) throws Exception {
+    public ResponseEntity<String> validation(
+            @PathVariable
+            @Parameter(description = "The prefix of the Type PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Type PID", example = "db605a11c81e79e1efc4", required = true)
+            String suffix,
+
+            @Parameter(description = "Whether to refresh the Type to include changes recently made in the DTR, recaching it.")
+            @RequestParam Optional<Boolean> refresh,
+
+            @Parameter(description = "Whether to refresh all the Properties of the Type down to its basic properties, " +
+                    "if available, to include changes recently made in the DTR, recaching them.")
+            @RequestParam Optional<Boolean> refreshChildren, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Validation Schema for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false), refreshChildren.orElse(false));
@@ -103,7 +131,25 @@ public class TypeController {
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
      */
-    public ResponseEntity<String> validate(@PathVariable String prefix, @PathVariable String suffix, @RequestBody Object payload, @RequestParam Optional<Boolean> refresh, @RequestParam Optional<Boolean> refreshChildren) throws Exception {
+    public ResponseEntity<String> validate(
+            @PathVariable
+            @Parameter(description = "The prefix of the Type PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Type PID", example = "d4242fb8297d3ff4199b", required = true)
+            String suffix,
+
+            @Parameter(description = "The JSON object to be validated", required = true)
+            @RequestBody Object payload,
+
+            @Parameter(description = "Whether to refresh the Type to include changes recently made in the DTR, recaching it.")
+            @RequestParam Optional<Boolean> refresh,
+
+            @Parameter(description = "Whether to refresh all the Properties of the Type down to its basic properties, " +
+                    "if available, to include changes recently made in the DTR, recaching them.")
+            @RequestParam Optional<Boolean> refreshChildren, @RequestHeader HttpHeaders header) throws Exception {
+
         logger.info(String.format("Validating..."));
         final HttpHeaders responseHeaders = new HttpHeaders();
         String response = typeService.validate(prefix + "/" + suffix, payload, refresh.orElse(false), refreshChildren.orElse(false));
@@ -118,7 +164,22 @@ public class TypeController {
     /**
      * Search for types by name, author and desc by default. can be adjusted by using the queryBy parameters.
      */
-    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(
+            @RequestParam
+            @Parameter(description = "The query to search for.")
+            String query,
+
+            @RequestParam(defaultValue = "name,authors,description")
+            @Parameter(description = "The fields to search in.")
+            String[] queryBy,
+
+            @RequestParam
+            @Parameter(description = "The filters to apply to the search.", example = "{\"\": \"\"}")
+            Map<String,String> filterBy,
+
+            @RequestParam(defaultValue = "true")
+            @Parameter(description = "Whether to use infix search.")
+            Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy));
         filterBy.remove("query");
         filterBy.remove("queryBy");

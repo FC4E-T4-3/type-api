@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -62,7 +63,22 @@ public class TaxonomyController {
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/search", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(
+            @RequestParam
+            @Parameter(description = "The query to search for.")
+            String query,
+
+            @RequestParam(defaultValue = "name,authors,description")
+            @Parameter(description = "The fields to search in.")
+            String[] queryBy,
+
+            @RequestParam
+            @Parameter(description = "The filters to apply to the search.", example = "{\"\": \"\"}")
+            Map<String,String> filterBy,
+
+            @RequestParam(defaultValue = "true")
+            @Parameter(description = "Whether to use infix search.")
+            Boolean infix) throws Exception {
         logger.info("Searching for...");
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -83,7 +99,18 @@ public class TaxonomyController {
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}) 
     @ResponseBody
-    public ResponseEntity<Object> getTaxonomyNode(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception{
+    public ResponseEntity<Object> getTaxonomyNode(
+            @PathVariable
+            @Parameter(description = "The prefix of the Taxonomy Type PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Taxonomy type PID", example = "2ba636a1ce6806a8d22c", required = true)
+            String suffix,
+
+            @Parameter(description = "Whether to refresh the taxonomy node to include changes recently made in the DTR, recaching it.")
+            @RequestParam Optional<Boolean> refresh,
+            @RequestHeader HttpHeaders header) throws Exception{
         logger.info(String.format("Retrieving taxonomy node ", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -107,7 +134,17 @@ public class TaxonomyController {
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}/types", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> getTaxonomyTypes(@PathVariable String prefix, @PathVariable String suffix, @RequestParam(defaultValue="false") Boolean subtree) throws Exception{
+    public ResponseEntity<Object> getTaxonomyTypes(
+            @PathVariable
+            @Parameter(description = "The prefix of the Taxonomy Type PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Taxonomy type PID", example = "0e76292794888d4f1fa7", required = true)
+            String suffix,
+
+            @Parameter(description = "Whether to include all types that are assigned to some taxonomy node that is hierarchically deeper in the subtree.")
+            @RequestParam(defaultValue="false") Boolean subtree) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
         taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, false);
@@ -120,7 +157,15 @@ public class TaxonomyController {
     @CrossOrigin
     @RequestMapping(value = "/v1/taxonomy/{prefix}/{suffix}/subtree", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> getTaxonomySubtree(@PathVariable String prefix, @PathVariable String suffix) throws Exception{
+    public ResponseEntity<Object> getTaxonomySubtree(
+        @PathVariable
+        @Parameter(description = "The prefix of the Taxonomy Type PID", example = "21.T11969", required = true)
+        String prefix,
+
+        @PathVariable
+        @Parameter(description = "The suffix of the Taxonomy type PID", example = "2ba636a1ce6806a8d22c", required = true)
+        String suffix
+    ) throws Exception{
         logger.info(String.format("Getting subtree from node %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode result = typeService.getTaxonomySubtree(prefix+"/"+suffix);
