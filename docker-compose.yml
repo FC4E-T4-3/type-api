@@ -15,4 +15,4 @@ services:
     environment:
       - "SPRING_PROFILES_ACTIVE=default"
       - "TYPESENSE_URL=typesense"
-      - "TYPESEMSE_KEY=xyz"
+      - "TYPESENSE_KEY=xyz"
