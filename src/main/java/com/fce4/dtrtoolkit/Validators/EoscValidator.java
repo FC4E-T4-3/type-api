@@ -140,7 +140,7 @@ public class EoscValidator extends BaseValidator{
                 boolean extractSub = false;
                 String usedName = i.get("Name").textValue();
                 TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
-                if(propertyEntity.getType().equals("InfoType")){
+                if(propertyEntity.getType().equals("InfoType") || propertyEntity.getType().equals("Profile")){
                     isBasic = false;
                     if(propertyEntity.getFundamentalType().equals("Object")){
                         if(typeProperties.has("extractProperties")){

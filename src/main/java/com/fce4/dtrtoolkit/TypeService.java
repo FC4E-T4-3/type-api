@@ -186,11 +186,12 @@ public class TypeService {
         //Check if the type is already in the cache. If yes, just fetch it from the DTR. Otherwise, the long way via Handle must be taken.
         if(typeSearch.has(pid, collection)){
             GeneralEntity type = new GeneralEntity(typeSearch.get(pid, "general"));
-            dtrUrl = type.getOrigin() + "objects/" + pid + "?full=true";
+            dtrUrl = type.getOrigin();
+            String uri =  dtrUrl +  "objects/" + pid + "?full=true";
             request = HttpRequest.newBuilder()
                     .GET()
                     .timeout(Duration.ofSeconds(60))
-                    .uri(URI.create(dtrUrl))
+                    .uri(URI.create(uri))
                     .build();
             response = client.send(request,HttpResponse.BodyHandlers.ofString());
         }
@@ -220,6 +221,8 @@ public class TypeService {
             response = client.send(request,HttpResponse.BodyHandlers.ofString());
         }
 
+        logger.info("DTR URL: " + dtrUrl);
+
         JsonNode root = mapper.readTree(response.body());
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
@@ -227,6 +230,10 @@ public class TypeService {
             typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
         }
         else if(dtrUrl.contains("typeregistry.lab.pidconsortium")){
+            dtrUrl = "https://typeregistry.lab.pidconsortium.net/";
+            GeneralEntity generalEntity = eoscExtractor.createGeneralEntity(root, dtrUrl);
+            typeSearch.upsertEntry(generalEntity.serializeSearch(), "general");
+
             if(root.get("type").textValue().equals("MeasurementUnit")){
                 UnitEntity unitEntity = eoscExtractor.createUnitEntity(root, dtrUrl);
                 typeSearch.upsertEntry(unitEntity.serializeSearch(), collection);
