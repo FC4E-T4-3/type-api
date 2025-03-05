@@ -126,7 +126,7 @@ public class TypeController {
                     "given type behind the PID and validates the data. This supports as of now BasicInfoTypes, InfoTypes" +
                     " and Profiles registered in one of the supported DTR's.")
     @CrossOrigin
-    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/v1/types/validate/{prefix}/{suffix}", method = RequestMethod.POST,  produces = {MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     /**
      * Given a digital object and a registered type, check if the object can be validated using the schema of the type
