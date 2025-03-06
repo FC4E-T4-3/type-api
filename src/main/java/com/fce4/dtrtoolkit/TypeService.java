@@ -406,15 +406,29 @@ public class TypeService {
      * @param object The JSON object that is to be validated
      * @throws Exception
      */
-    public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception{
+    public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception {
+        // Increase default timeouts
+        System.setProperty("sun.net.client.defaultConnectTimeout", "30000");
+        System.setProperty("sun.net.client.defaultReadTimeout", "60000");
+
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        checkAdd(pid, refresh, refreshChildren, "types");
-        JsonSchema schema = factory.getSchema(getValidation(pid,false, false).toString());
-        JsonNode node = mapper.valueToTree(object);
-        Set<ValidationMessage> errors = schema.validate(node);
-        if(errors.size()>0){
-            return errors.toString();
+        //checkAdd(pid, refresh, refreshChildren, "types");
+
+        try {
+            long startTime = System.currentTimeMillis();
+            JsonSchema schema = factory.getSchema(getValidation(pid, refresh, refreshChildren).toString());
+            System.out.println("Schema loaded in " + (System.currentTimeMillis() - startTime) + "ms");
+
+            JsonNode node = mapper.valueToTree(object);
+            Set<ValidationMessage> errors = schema.validate(node);
+            if(errors.size()>0){
+                return errors.toString();
+            }
+            return "Valid";
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error loading/validating schema: " + e.getMessage());
+            throw e;
         }
-        return "Valid";
     }
 }
