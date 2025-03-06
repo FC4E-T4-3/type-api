@@ -28,7 +28,9 @@ import org.tomlj.TomlTable;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -44,7 +46,7 @@ import java.util.logging.Logger;
 public class TypeService {
 
     ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
-    ObjectMapper mapper = new ObjectMapper();
+    static ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private LegacyValidator legacyValidator;
@@ -400,6 +402,72 @@ public class TypeService {
         return typeSearch.search(query, queryBy, filterBy, collection, infix);
     }
 
+    public JsonNode resolveRefs(JsonNode schemaNode) throws IOException {
+        if (schemaNode.isObject()) {
+            ObjectNode objectNode = (ObjectNode) schemaNode;
+            Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                if ("$ref".equals(entry.getKey()) && entry.getValue().isTextual()) {
+                    String refUrl = entry.getValue().asText();
+                    System.out.println("Resolving: " + refUrl);
+
+                    try {
+                        URL url = new URL(refUrl);
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setInstanceFollowRedirects(true);
+
+                        int responseCode = connection.getResponseCode();
+                        logger.info("Response Code: " + responseCode);
+
+                        // Follow redirects manually if necessary
+                        if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                                responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+                            String newUrl = connection.getHeaderField("Location");
+                            connection = (HttpURLConnection) new URL(newUrl).openConnection();
+                            responseCode = connection.getResponseCode();
+                            logger.info("Redirected to: " + newUrl + " with Response Code: " + responseCode);
+                        }
+
+                        if (responseCode == HttpURLConnection.HTTP_OK) {
+                            String response = new String(connection.getInputStream().readAllBytes());
+                            JsonNode refSchema = mapper.readTree(response);
+
+                            if (refSchema.isEmpty()) {
+                                logger.warning("Fetched schema is empty for URL: " + refUrl);
+                            } else {
+                                // Replace $ref with actual schema content
+                                return resolveRefs(refSchema);
+                            }
+                        } else {
+                            logger.warning("Failed to fetch schema. Response code: " + responseCode);
+                        }
+                    } catch (Exception e) {
+                        logger.severe("Error fetching schema: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } else {
+                    objectNode.set(entry.getKey(), resolveRefs(entry.getValue()));
+                }
+            }
+        } else if (schemaNode.isArray()) {
+            ArrayNode arrayNode = (ArrayNode) schemaNode;
+            for (int i = 0; i < arrayNode.size(); i++) {
+                arrayNode.set(i, resolveRefs(arrayNode.get(i)));
+            }
+        }
+        return schemaNode;
+    }
+
+    /**
+     * Loads the root schema, resolves all $refs, and returns the expanded schema.
+     */
+    public JsonNode loadAndExpandSchema(String schemaUrl) throws IOException {
+        System.out.println("Loading schema: " + schemaUrl);
+        JsonNode rootSchema = mapper.readTree(schemaUrl);
+        return resolveRefs(rootSchema);
+    }
+
     /**
      * Validates a JSON object against a type schema.
      * @param pid The PID of the type against which the object should be validated
@@ -407,28 +475,23 @@ public class TypeService {
      * @throws Exception
      */
     public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception {
-        // Increase default timeouts
-        System.setProperty("sun.net.client.defaultConnectTimeout", "30000");
-        System.setProperty("sun.net.client.defaultReadTimeout", "60000");
-
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        //checkAdd(pid, refresh, refreshChildren, "types");
-
         try {
-            long startTime = System.currentTimeMillis();
-            JsonSchema schema = factory.getSchema(getValidation(pid, refresh, refreshChildren).toString());
-            System.out.println("Schema loaded in " + (System.currentTimeMillis() - startTime) + "ms");
+            checkAdd(pid, refresh, refreshChildren, "types");
+            // Load schema and resolve all $ref
+            JsonNode expandedSchema = loadAndExpandSchema(getValidation(pid, refresh, refreshChildren).toString());
 
+            // Convert JSON object to JsonNode
             JsonNode node = mapper.valueToTree(object);
+
+            // Validate using JSON Schema Validator
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            JsonSchema schema = factory.getSchema(expandedSchema.toString());
+            logger.info("Expanded Schema: " + expandedSchema);
             Set<ValidationMessage> errors = schema.validate(node);
-            if(errors.size()>0){
-                return errors.toString();
-            }
-            return "Valid";
+            return errors.isEmpty() ? "Valid" : errors.toString();
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("Error loading/validating schema: " + e.getMessage());
-            throw e;
+            return "Error: " + e.getMessage();
         }
     }
 }
