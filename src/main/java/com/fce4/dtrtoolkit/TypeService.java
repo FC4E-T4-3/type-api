@@ -402,7 +402,7 @@ public class TypeService {
         return typeSearch.search(query, queryBy, filterBy, collection, infix);
     }
 
-    public JsonNode resolveRefs(JsonNode schemaNode) throws IOException {
+    public JsonNode resolveRefs(JsonNode schemaNode) throws IOException, InterruptedException {
         if (schemaNode.isObject()) {
             ObjectNode objectNode = (ObjectNode) schemaNode;
             Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
@@ -413,25 +413,24 @@ public class TypeService {
                     System.out.println("Resolving: " + refUrl);
 
                     try {
-                        URL url = new URL(refUrl);
-                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                        connection.setInstanceFollowRedirects(true);
+                        HttpClient client = HttpClient.newBuilder()
+                                .followRedirects(HttpClient.Redirect.NORMAL)
+                                .connectTimeout(Duration.ofSeconds(20))
+                                .build();
 
-                        int responseCode = connection.getResponseCode();
-                        logger.info("Response Code: " + responseCode);
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(URI.create(refUrl))
+                                .GET()
+                                .build();
 
-                        // Follow redirects manually if necessary
-                        if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
-                                responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-                            String newUrl = connection.getHeaderField("Location");
-                            connection = (HttpURLConnection) new URL(newUrl).openConnection();
-                            responseCode = connection.getResponseCode();
-                            logger.info("Redirected to: " + newUrl + " with Response Code: " + responseCode);
-                        }
+                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-                        if (responseCode == HttpURLConnection.HTTP_OK) {
-                            String response = new String(connection.getInputStream().readAllBytes());
-                            JsonNode refSchema = mapper.readTree(response);
+                        int statusCode = response.statusCode();
+                        logger.info("Response Code: " + statusCode);
+
+                        if (statusCode == 200) {
+                            String responseBody = response.body();
+                            JsonNode refSchema = mapper.readTree(responseBody);
 
                             if (refSchema.isEmpty()) {
                                 logger.warning("Fetched schema is empty for URL: " + refUrl);
@@ -440,7 +439,7 @@ public class TypeService {
                                 return resolveRefs(refSchema);
                             }
                         } else {
-                            logger.warning("Failed to fetch schema. Response code: " + responseCode);
+                            logger.warning("Failed to fetch schema. Response code: " + statusCode);
                         }
                     } catch (Exception e) {
                         logger.severe("Error fetching schema: " + e.getMessage());
@@ -462,7 +461,7 @@ public class TypeService {
     /**
      * Loads the root schema, resolves all $refs, and returns the expanded schema.
      */
-    public JsonNode loadAndExpandSchema(String schemaUrl) throws IOException {
+    public JsonNode loadAndExpandSchema(String schemaUrl) throws IOException, InterruptedException {
         System.out.println("Loading schema: " + schemaUrl);
         JsonNode rootSchema = mapper.readTree(schemaUrl);
         return resolveRefs(rootSchema);
@@ -486,7 +485,6 @@ public class TypeService {
             // Validate using JSON Schema Validator
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
             JsonSchema schema = factory.getSchema(expandedSchema.toString());
-            logger.info("Expanded Schema: " + expandedSchema);
             Set<ValidationMessage> errors = schema.validate(node);
             return errors.isEmpty() ? "Valid" : errors.toString();
         } catch (Exception e) {
