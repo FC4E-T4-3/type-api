@@ -165,9 +165,9 @@ public class TypeService {
 
     public void cacheSchema(String pid) throws Exception{
         ObjectNode schema = getValidation(pid, false, false);
-//        Map<String, Object> type = typeSearch.get(pid, "types");
-//        type.put("schema", schema);
-//        typeSearch.upsertEntry(type, "types");
+        Map<String, Object> type = typeSearch.get(pid, "types");
+        type.put("schema", schema);
+        typeSearch.upsertEntry(type, "types");
     }
 
 
