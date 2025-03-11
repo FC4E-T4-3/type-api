@@ -19,8 +19,11 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.tomlj.Toml;
 import org.tomlj.TomlParseResult;
 import org.tomlj.TomlTable;
@@ -139,6 +142,22 @@ public class TypeService {
 
             cacheSchemas();
 
+            logger.info("Testing Enum Validation");
+            String pid = "21.T11969/1017a8b3eda1fcc53e7f";
+            String enumUrl = "https://mscr-vocabularies-test.2.rahtiapp.fi/terminology-api/api/v1/integration/vocabularyAsEnum?vocabularyID=http://hdl.handle.net/21.T13999/EOSC-202501000338250&lang=en";
+
+            HttpClient client = HttpClient.newHttpClient();;
+            HttpRequest request;
+            HttpResponse<String> response;
+
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(enumUrl))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
+
+            logger.info(response.body());
             logger.info("Refreshing Cache successful.");
         } catch (Exception e) {
             logger.severe("Unexpected error occurred in scheduled task: " + e.getMessage());

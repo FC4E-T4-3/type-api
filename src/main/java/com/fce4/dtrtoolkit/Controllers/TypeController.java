@@ -122,21 +122,6 @@ public class TypeController {
         return new ResponseEntity<String>(node.toString(), responseHeaders, HttpStatus.OK);
     }
 
-    @CrossOrigin
-    @RequestMapping(value = "/v1/types/validate/enum", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_JSON_VALUE})
-    @ResponseBody
-    public ResponseEntity<String> validateEnumTest() throws Exception{
-        logger.info("Testing Enum Validation");
-        String pid = "21.T11969/1017a8b3eda1fcc53e7f";
-        String enumUrl = "https://mscr-vocabularies-test.2.rahtiapp.fi/terminology-api/api/v1/integration/vocabularyAsEnum?vocabularyID=http://hdl.handle.net/21.T13999/EOSC-202501000338250&lang=en";
-        RestTemplate restTemplate = new RestTemplate();
-        String enumResponse = restTemplate.getForObject(enumUrl, String.class);
-        logger.info(enumResponse);
-        String response = typeService.validate(pid, "payload",false, false);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-
     @Operation(summary = "Validate data against a data type.",
             description= "This endpoints takes some input in valid JSON format, generates the validation schema for the " +
                     "given type behind the PID and validates the data. This supports as of now BasicInfoTypes, InfoTypes" +
