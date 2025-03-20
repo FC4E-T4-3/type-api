@@ -103,23 +103,27 @@ public class TypeService {
                     TomlTable t = TomlTable.class.cast(i.getValue());
                     String dtr = i.getKey();
                     ArrayList<Object> units = new ArrayList<Object>();
+                    ArrayList<Object> types = new ArrayList<>();
                     ArrayList<Object> taxonomy = new ArrayList<Object>();
                     ArrayList<Object> general = new ArrayList<Object>();
                     String url = t.getString("url");
                     String suffix = t.getString("suffix");
-                    List<Object> types = t.getArray("types").toList();
                     String style = t.getString("style");
 
+                    if(t.contains("basicTypes")) {
+                        types.addAll(t.getArray("basicTypes").toList());
+                    }
+                    if(t.contains("compositeTypes")) {
+                        types.addAll(t.getArray("compositeTypes").toList());
+                    }
                     if (t.contains("units")) {
-                        units = new ArrayList<Object>(t.getArray("units").toList());
+                        units.addAll(t.getArray("units").toList());
                     }
-
                     if (t.contains("taxonomy")) {
-                        taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
+                        taxonomy.addAll(t.getArray("taxonomy").toList());
                     }
-
                     if (t.contains("general")) {
-                        general = new ArrayList<Object>(t.getArray("general").toList());
+                        general.addAll(t.getArray("general").toList());
                     }
 
                     logger.info(String.format("extracting %s", url));
