@@ -1,5 +1,6 @@
 package com.fce4.dtrtoolkit.Validators;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -15,6 +16,14 @@ import com.fce4.dtrtoolkit.Entities.TypeEntity;
 public class EoscValidator extends BaseValidator{
 
     Logger logger = Logger.getLogger(EoscValidator.class.getName());
+
+    private ArrayList<Object> basicTypes;
+    private ArrayList<Object> compositeTypes;
+
+    public void setTypes(ArrayList<Object> basicTypes, ArrayList<Object> compositeTypes) {
+        this.basicTypes = basicTypes;
+        this.compositeTypes = compositeTypes;
+    }
 
     public ObjectNode handleBasicType(TypeEntity typeEntity){
         ObjectNode node = mapper.createObjectNode();
@@ -140,7 +149,7 @@ public class EoscValidator extends BaseValidator{
                 boolean extractSub = false;
                 String usedName = i.get("Name").textValue();
                 TypeEntity propertyEntity = new TypeEntity(typeSearch.get(i.get("Type").textValue(), "types"));
-                if(propertyEntity.getType().equals("InfoType") || propertyEntity.getType().equals("Profile")){
+                if(compositeTypes.contains(propertyEntity.getType())){
                     isBasic = false;
                     if(propertyEntity.getFundamentalType().equals("Object")){
                         if(typeProperties.has("extractProperties")){
@@ -287,7 +296,7 @@ public class EoscValidator extends BaseValidator{
             }
             ObjectNode propertyNode = mapper.createObjectNode();
             TypeEntity propertyEntity = new TypeEntity(typeSearch.get(subCond, "types"));
-            if(propertyEntity.getType().equals("BasicInfoType")){
+            if(basicTypes.contains(propertyEntity.getType())){
                 propertyNode = handleBasicType(propertyEntity);
             }
             else{
@@ -310,7 +319,7 @@ public class EoscValidator extends BaseValidator{
         TypeEntity type = new TypeEntity(typeFromSearch);
         ObjectNode root;
 
-        if(type.getType().equals("BasicInfoType")){
+        if(basicTypes.contains(type.getType())){
             root = handleBasicType(type);
         }
         else{

@@ -48,7 +48,9 @@ import java.util.logging.Logger;
 @Service
 public class TypeService {
 
-    ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
+    ArrayList<Object> basicTypes = new ArrayList<>();
+    ArrayList<Object> compositeTypes = new ArrayList<>();
+
     static ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
@@ -69,19 +71,20 @@ public class TypeService {
     @Autowired
     private TaxonomyGraph taxonomyGraph;
 
-    private String config="src/main/config/config.toml";
-    
+    private String config = "src/main/config/config.toml";
+
     Logger logger = Logger.getLogger(TypeService.class.getName());
 
 
     @PostConstruct
-    public void init() throws IOException, InterruptedException, Exception{
+    public void init() throws IOException, InterruptedException, Exception {
         logger.info(new File(".").getAbsolutePath());
         //refreshRepository();
     }
 
     /**
      * Refreshes the full contents of the cache, harvesting the env_file.
+     *
      * @throws InterruptedException
      * @throws IOException
      */
@@ -89,7 +92,6 @@ public class TypeService {
     public void refreshRepository() throws IOException, InterruptedException, Exception {
         try {
             logger.info("Refreshing Cache");
-            typeList.clear();
             logger.info("Refreshing Indexer");
             typeSearch.initTypesense();
             Date currentDate = new Date(System.currentTimeMillis());
@@ -103,24 +105,33 @@ public class TypeService {
                     TomlTable t = TomlTable.class.cast(i.getValue());
                     String dtr = i.getKey();
                     ArrayList<Object> units = new ArrayList<Object>();
+                    ArrayList<Object> types = new ArrayList<>();
                     ArrayList<Object> taxonomy = new ArrayList<Object>();
                     ArrayList<Object> general = new ArrayList<Object>();
                     String url = t.getString("url");
                     String suffix = t.getString("suffix");
-                    List<Object> types = t.getArray("types").toList();
                     String style = t.getString("style");
 
+                    if (t.contains("basicTypes")) {
+                        types.addAll(t.getArray("basicTypes").toList());
+                        basicTypes.addAll(t.getArray("basicTypes").toList());
+                    }
+                    if (t.contains("compositeTypes")) {
+                        types.addAll(t.getArray("compositeTypes").toList());
+                        compositeTypes.addAll(t.getArray("compositeTypes").toList());
+                    }
                     if (t.contains("units")) {
-                        units = new ArrayList<Object>(t.getArray("units").toList());
+                        units.addAll(t.getArray("units").toList());
                     }
-
                     if (t.contains("taxonomy")) {
-                        taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
+                        taxonomy.addAll(t.getArray("taxonomy").toList());
+                    }
+                    if (t.contains("general")) {
+                        general.addAll(t.getArray("general").toList());
                     }
 
-                    if (t.contains("general")) {
-                        general = new ArrayList<Object>(t.getArray("general").toList());
-                    }
+                    legacyValidator.setTypes(basicTypes, compositeTypes);
+                    eoscValidator.setTypes(basicTypes, compositeTypes);
 
                     logger.info(String.format("extracting %s", url));
 

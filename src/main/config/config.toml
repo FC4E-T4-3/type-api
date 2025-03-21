@@ -2,19 +2,29 @@
 url="https://typeregistry.lab.pidconsortium.net/"
 suffix="objects?query=*"
 style="eosc"
-types=["BasicInfoType","InfoType","Profile"]
+basicTypes=["BasicInfoType"]
+compositeTypes=["InfoType", "Profile"]
 units=["MeasurementUnit"]
 taxonomy=["TaxonomyNode"]
 general=["ExtendedMimeType"]
+
+[Typeregistry-Testbed]
+url="http://typeregistry.testbed.pid.gwdg.de/"
+suffix="objects?query=*"
+style="eosc"
+basicTypes=["BasicInfoType","FdoAttribute"]
+compositeTypes=["InfoType", "Profile", "FdoCombinedAttribute", "FdoProfile"]
 
 [DTR-Test]
 url="https://dtr-test.pidconsortium.net/"
 suffix="objects?query=*"
 style="legacy"
-types=["PID-BasicInfoType","PID-InfoType","KernelInformationProfile"]
+basicTypes=["PID-BasicInfoType"]
+compositeTypes=["PID-InfoType", "KernelInformationProfile"]
 
 [DTR-PIT]
 url="https://dtr-pit.pidconsortium.net/"
 suffix="objects?query=*"
 style="legacy"
-types=["PID-BasicInfoType","PID-InfoType","KernelInformationProfile"]
+basicTypes=["PID-BasicInfoType"]
+compositeTypes=["PID-InfoType", "KernelInformationProfile"]
