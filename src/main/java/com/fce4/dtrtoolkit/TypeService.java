@@ -237,16 +237,16 @@ public class TypeService {
             response = client.send(request,HttpResponse.BodyHandlers.ofString());
         }
 
-        logger.info("DTR URL: " + dtrUrl);
-
         JsonNode root = mapper.readTree(response.body());
+        logger.info(root.toString());
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
             legacyExtractor.extractFields(typeEntity);
             typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
         }
-        else if(dtrUrl.contains("typeregistry.lab.pidconsortium")){
-            dtrUrl = "https://typeregistry.lab.pidconsortium.net/";
+        else{
+            dtrUrl = "https://" + dtrUrl.split("/")[2]+"/";
+            logger.info(dtrUrl);
             GeneralEntity generalEntity = eoscExtractor.createGeneralEntity(root, dtrUrl);
             typeSearch.upsertEntry(generalEntity.serializeSearch(), "general");
 
@@ -265,9 +265,6 @@ public class TypeService {
                 eoscExtractor.extractTypeFields(typeEntity);
                 typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
             }
-        }
-        else{
-            logger.warning("PID does not describe a type or is not supported by this application.");
         }
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
     }
