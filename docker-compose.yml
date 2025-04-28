@@ -7,7 +7,7 @@ services:
       - "8108:8108"
     volumes:
       - ./typesense-data:/data
-    command: '--data-dir /data --api-key=xyz --enable-cors'
+    command: '--data-dir /data --api-key=${TYPESENSE_KEY} --enable-cors'
     logging:  
       driver: "json-file"
       options:
@@ -19,9 +19,9 @@ services:
     ports: 
       - "8080:8080"
     environment:
-      - "SPRING_PROFILES_ACTIVE=prod"
+      - "SPRING_PROFILES_ACTIVE=${ENV}"
       - "TYPESENSE_URL=typesense"
-      - "TYPESENSE_KEY=xyz"
+      - "TYPESENSE_KEY=${TYPESENSE_KEY}"
       - "TYPESENSE_PORT=8108"
     depends_on:
       - typesense
