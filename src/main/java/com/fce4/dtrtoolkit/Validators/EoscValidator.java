@@ -16,6 +16,7 @@ import com.fce4.dtrtoolkit.Entities.TypeEntity;
 public class EoscValidator extends BaseValidator{
 
     Logger logger = Logger.getLogger(EoscValidator.class.getName());
+    private static final int MAX_DEPTH = 100; //
 
     private ArrayList<Object> basicTypes;
     private ArrayList<Object> compositeTypes;
@@ -107,7 +108,12 @@ public class EoscValidator extends BaseValidator{
         return node;
     }
 
-    public ObjectNode handleInfoType(TypeEntity typeEntity) throws Exception {
+    public ObjectNode handleInfoType(TypeEntity typeEntity, int depth) throws Exception {
+        if (depth > MAX_DEPTH) {
+            logger.warning("Max depth reached for type: " + typeEntity.getPid());
+            return mapper.createObjectNode().put("error", "Max depth reached");
+        }
+
         ObjectNode node = mapper.createObjectNode();
         JsonNode content = typeEntity.getContent();
         node.put("@id", typeEntity.getPid());
@@ -165,7 +171,7 @@ public class EoscValidator extends BaseValidator{
                     }
                     else{
                         if(extractSub){
-                            ObjectNode tmp = handleInfoType(propertyEntity);
+                            ObjectNode tmp = handleInfoType(propertyEntity, depth + 1);
                             if(tmp.has("properties")){
                                 propertyNodes.setAll(mapper.convertValue(tmp.get("properties"), ObjectNode.class));
                             } else if (tmp.has("allOf")) {
@@ -192,7 +198,7 @@ public class EoscValidator extends BaseValidator{
                         }
                         else{
                             propertyNode.put("type", "object");
-                            propertyNode.setAll(handleInfoType(propertyEntity));
+                            propertyNode.setAll(handleInfoType(propertyEntity, depth));
                         }
                     }
                     if(cardinality.equals("1")){
@@ -209,7 +215,7 @@ public class EoscValidator extends BaseValidator{
                             propertyNodes.putPOJO("Info", "Extract Properties field is not compatible with arrays.");
                         }
                         else{
-                            propertyNode.putPOJO("items", handleInfoType(propertyEntity));
+                            propertyNode.putPOJO("items", handleInfoType(propertyEntity, depth + 1 ));
                         }
                     }
                     if(cardinality.equals("1 - n")){
@@ -300,7 +306,7 @@ public class EoscValidator extends BaseValidator{
                 propertyNode = handleBasicType(propertyEntity);
             }
             else{
-                propertyNode = handleInfoType(propertyEntity);
+                propertyNode = handleInfoType(propertyEntity, depth + 1);
             }
             node.putPOJO("items",propertyNode);
         }
@@ -323,7 +329,7 @@ public class EoscValidator extends BaseValidator{
             root = handleBasicType(type);
         }
         else{
-            root = handleInfoType(type);
+            root = handleInfoType(type, 0);
         }
 
         //Inserting common fields 'title', 'description' and '$schema'. Description optional.
