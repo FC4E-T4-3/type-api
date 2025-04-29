@@ -17,7 +17,7 @@ The **DTR Toolkit** is a framework designed to work with Data Type Registries (D
 
 ## Features
 - **Type Extraction**: Extract types from DTRs of different providers.
-- **Validation**: Generate and validate schemas for different types describing schema elements.
+- **Validation**: Generate schemas for different types describing schema elements and validate data.
 - **Taxonomy Management**: Manage and retrieve taxonomies.
 - **Unit Handling**: Extract and manage unit entities.
 - **RESTful API**: Provides a RESTful API for interaction.
