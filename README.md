@@ -17,7 +17,7 @@ The **DTR Toolkit** is a framework designed to work with Data Type Registries (D
 
 ## Features
 - **Type Extraction**: Extract types from DTRs of different providers.
-- **Validation**: Generate and validate schemas for different types describing schema elements.
+- **Validation**: Generate schemas for different types describing schema elements and validate data.
 - **Taxonomy Management**: Manage and retrieve taxonomies.
 - **Unit Handling**: Extract and manage unit entities.
 - **RESTful API**: Provides a RESTful API for interaction.
@@ -60,6 +60,9 @@ typesense.key=xyz
 
 ### Via Docker Compose
 You can also simply use the provided `docker-compose.yml` file to run the service and a typesense instance. The docker image for the TypeAPI is stored in the GitHub Container Registry: `ghcr.io/fc4e-t4-3/dtr-toolkit:latest`. So if you want a simple setup, just run `docker-compose up`in the same folder as the `docker-compose.yml` to start the containers.
+
+The compose file requires two environment variables to be set, an `${ENV}` variable, either `default` or `prod`, for setting the logging level. Also, a `${TYPESENSE_KEY}"` needs to be set, both for initialzing the Typesense container, and for allowing the application access to it. These can be set using an `.env` file in the same folder as the compose file. 
+
 ## Usage
 Once the application is running, you can access the Swagger UI at http://localhost:8080.
 
