@@ -386,6 +386,15 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      */
     public void addAllChildren(String pid) throws Exception{
+        addAllChildren(pid, new HashSet<>());
+    }
+
+    private void addAllChildren(String pid, Set<String> visited) throws Exception{
+        if(visited.contains(pid)){
+            return;
+        }
+        visited.add(pid);
+        
         addType(pid, "types");
         Map<String, Object> type = typeSearch.get(pid, "types");
         ObjectNode node = mapper.valueToTree(type.get("content"));
@@ -394,7 +403,7 @@ public class TypeService {
                 ArrayNode properties = mapper.valueToTree(node.get("Schema").get("Properties"));
                 for(JsonNode i : properties){
                     if(i.has("Type")){
-                        addAllChildren(i.get("Type").textValue());
+                        addAllChildren(i.get("Type").textValue(), visited);
                     }
                 }
             }
