@@ -1,9 +1,7 @@
 package com.fce4.dtrtoolkit.Controllers;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -146,8 +144,8 @@ public class TaxonomyController {
             @Parameter(description = "Whether to include all types that are assigned to some taxonomy node that is hierarchically deeper in the subtree.")
             @RequestParam(defaultValue="false") Boolean subtree) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
-        JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
-        taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, false);
+        //JsonNode taxonomyNode = JsonNodeFactory.instance.objectNode(); 
+        JsonNode taxonomyNode = typeService.getTaxonomyNode(prefix+"/"+suffix, false);
         final HttpHeaders responseHeaders = new HttpHeaders();
         ArrayList<Object> result = typeService.getTypesTaxonomy(prefix+"/"+suffix, subtree);
         return new ResponseEntity<Object>(mapper.readTree(result.toString()), responseHeaders, HttpStatus.OK);

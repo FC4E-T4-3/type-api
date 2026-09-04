@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.typesense.api.*;
 import org.typesense.model.*;
 import org.typesense.resources.*;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -38,7 +39,11 @@ public class TypeSearch {
             port
             )
         );   
-        Configuration configuration = new Configuration(nodes, Duration.ofSeconds(20),key);
+        Configuration configuration = new Configuration(
+            new Node[] {new Node("http", url, port)},
+            Duration.ofSeconds(20),
+            key
+        );
         typeSenseClient = new Client(configuration);
         initTypesense();
     }
@@ -53,7 +58,7 @@ public class TypeSearch {
     public void initTypes() throws Exception{
         try{
             typeSenseClient.collections("types").retrieve();
-            typeSenseClient.collections("types").delete();
+            typeSenseClient.operations().deleteCollection("types");
         }
         catch(Exception e) {
             logger.info("Collection types did not exist yet. Creating...");
@@ -85,7 +90,7 @@ public class TypeSearch {
     public void initUnits() throws Exception {
         try{
             typeSenseClient.collections("units").retrieve();
-            typeSenseClient.collections("units").delete();
+            typeSenseClient.operations().deleteCollection("units");
         }
         catch(Exception e) {
             logger.info("Collection units did not exist yet. Creating...");
@@ -113,7 +118,7 @@ public class TypeSearch {
     public void initTaxonomy() throws Exception {
         try{
             typeSenseClient.collections("taxonomy").retrieve();
-            typeSenseClient.collections("taxonomy").delete();
+            typeSenseClient.operations().deleteCollection("taxonomy");
         }
         catch(Exception e){
             logger.info("Collection taxonomy did not exist yet. Creating...");
@@ -139,7 +144,7 @@ public class TypeSearch {
     public void initGeneralTypes() throws Exception {
         try{
             typeSenseClient.collections("general").retrieve();
-            typeSenseClient.collections("general").delete();
+            typeSenseClient.operations().deleteCollection("general");
         }
         catch(Exception e){
             logger.info("Collection general did not exist yet. Creating...");
@@ -165,13 +170,13 @@ public class TypeSearch {
     }
 
     public void upsertEntry(Map<String, Object> type, String collection) throws Exception{
-        typeSenseClient.collections(collection).documents().upsert(type);
+        typeSenseClient.operations().upsertDocument(collection, type, Map.of("action", "upsert"));
     }
 
     public void upsertList(ArrayList<HashMap<String, Object>> typeList, String collection) throws Exception {
         ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
         importDocumentsParameters.action("upsert");
-        typeSenseClient.collections(collection).documents().import_(typeList, importDocumentsParameters);
+        typeSenseClient.collections(collection).documents().importDocuments(typeList, importDocumentsParameters);
     }
 
     /**
@@ -199,13 +204,13 @@ public class TypeSearch {
             searchParameters.setFilterBy(filterString);
         }
 
-        //Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
-       
+//Since TypeSense works via pages, we collect all results from all pages while setting the perPage value to the max value.
+        
         SearchResult searchResult = typeSenseClient.collections(collection).documents().search(searchParameters);
         for(SearchResultHit hit : searchResult.getHits()){
             resultList.add(mapper.writeValueAsString(hit.getDocument()));
         }
-        while(searchResult.getHits().size() > 0){
+        while(searchResult.getHits().length > 0){
             searchParameters.setPage(searchParameters.getPage()+1);
             searchResult = typeSenseClient.collections(collection).documents().search(searchParameters);
             for(SearchResultHit hit : searchResult.getHits()){
