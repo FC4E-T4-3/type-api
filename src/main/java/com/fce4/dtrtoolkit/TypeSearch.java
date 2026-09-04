@@ -17,6 +17,8 @@ import org.typesense.api.*;
 import org.typesense.model.*;
 import org.typesense.resources.*;
 
+import org.typesense.model.ImportDocumentsParameters;
+import org.typesense.model.IndexAction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -170,7 +172,7 @@ public class TypeSearch {
 
     public void upsertList(ArrayList<HashMap<String, Object>> typeList, String collection) throws Exception {
         ImportDocumentsParameters importDocumentsParameters = new ImportDocumentsParameters();
-        importDocumentsParameters.action("upsert");
+        importDocumentsParameters.action(IndexAction.UPSERT);
         typeSenseClient.collections(collection).documents().import_(typeList, importDocumentsParameters);
     }
 
