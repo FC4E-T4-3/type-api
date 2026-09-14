@@ -168,10 +168,16 @@ public class TypeService {
                 String style = obj.get("style").textValue();
                 if (style.equals("eosc")) {
                     String id = obj.get("id").toString().replace("\"", "");
-                    cacheSchema(id);
+                    String decodedId = java.net.URLDecoder.decode(id, java.nio.charset.StandardCharsets.UTF_8);
+                    if (typeSearch.has(decodedId, "types")) {
+                        cacheSchema(decodedId);
+                    } else {
+                        logger.warning("Skipping schema cache for " + decodedId + " - not found in TypeSense");
+                    }
                 }
             } catch (Exception e) {
-                logger.warning("Error caching schema: " + obj.get("id").toString().replace("\"", "") + e.getMessage());
+                logger.warning("Error caching schema: " + obj.get("id").toString().replace("\"", "") + " - " + e.getMessage());
+                e.printStackTrace();
                 //logger.warning(i.toString());
             }
         }
@@ -320,9 +326,13 @@ public class TypeService {
      */
     public ObjectNode getValidation(String pid, Boolean refresh, Boolean refreshChildren) throws Exception {
         ObjectNode root = mapper.createObjectNode();
+        logger.info("HHHHHHHHH getValidation 1 HHHHHHHHHHHHH "+ pid);
         checkAdd(pid, refresh, refreshChildren, "types");
+        logger.info("HHHHHHHHH getValidation 2 HHHHHHHHHHHHH "+ pid);
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
+        logger.info("HHHHHHHHH getValidation 3 HHHHHHHHHHHHH");
         String style = typeEntity.getStyle();
+        logger.info("HHHHHHHHH getValidation 4 HHHHHHHHHHHHH");
         try{
             root = switch (style) {
                 case "legacy" -> legacyValidator.validation(pid);

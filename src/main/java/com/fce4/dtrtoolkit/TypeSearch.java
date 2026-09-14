@@ -217,13 +217,13 @@ public class TypeSearch {
         return resultList;
     }
 
-    public Map<String, Object> get(String pid, String collection) throws Exception {
-       return this.typeSenseClient.collections(collection).documents(URLEncoder.encode(pid, StandardCharsets.UTF_8.toString())).retrieve();
+public Map<String, Object> get(String pid, String collection) throws Exception {
+        return this.typeSenseClient.collections(collection).documents(pid).retrieve();
     }
 
     public boolean has(String pid, String collection) throws IOException{
         try{
-            this.typeSenseClient.collections(collection).documents(URLEncoder.encode(pid, StandardCharsets.UTF_8.toString())).retrieve();
+            this.typeSenseClient.collections(collection).documents(pid).retrieve();
             return true;
         }
         catch(Exception e) {
