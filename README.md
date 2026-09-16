@@ -55,7 +55,7 @@ typesense.key=xyz
 
 3. Build and run the project:
 ```
-./gradlew buildRun
+./gradlew build
 ```
 
 ### Via Docker Compose
