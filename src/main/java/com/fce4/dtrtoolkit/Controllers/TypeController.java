@@ -110,14 +110,11 @@ public class TypeController {
                     "if available, to include changes recently made in the DTR, recaching them.")
             @RequestParam Optional<Boolean> refreshChildren, @RequestHeader HttpHeaders header) throws Exception {
         logger.info(String.format("Getting Validation Schema for %s.", prefix+"/"+suffix));
-        logger.info("---------1---------");
         final HttpHeaders responseHeaders = new HttpHeaders();
-        logger.info("---------2---------");
         ObjectNode node = typeService.getValidation(prefix+"/"+suffix, refresh.orElse(false), refreshChildren.orElse(false));
         //Neccessary to clean the JSON string, since Java escapes already escaped characters.
         //String cleaned = node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\").replace("\\\\", "\\");
         //logger.info(cleaned);
-        logger.info("---------3---------");
         //logger.info(node.toString());
         //logger.info("------------------");
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);

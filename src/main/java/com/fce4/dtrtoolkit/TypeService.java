@@ -326,13 +326,9 @@ public class TypeService {
      */
     public ObjectNode getValidation(String pid, Boolean refresh, Boolean refreshChildren) throws Exception {
         ObjectNode root = mapper.createObjectNode();
-        logger.info("HHHHHHHHH getValidation 1 HHHHHHHHHHHHH "+ pid);
         checkAdd(pid, refresh, refreshChildren, "types");
-        logger.info("HHHHHHHHH getValidation 2 HHHHHHHHHHHHH "+ pid);
         TypeEntity typeEntity = new TypeEntity(typeSearch.get(pid, "types"));
-        logger.info("HHHHHHHHH getValidation 3 HHHHHHHHHHHHH");
         String style = typeEntity.getStyle();
-        logger.info("HHHHHHHHH getValidation 4 HHHHHHHHHHHHH");
         try{
             root = switch (style) {
                 case "legacy" -> legacyValidator.validation(pid);
