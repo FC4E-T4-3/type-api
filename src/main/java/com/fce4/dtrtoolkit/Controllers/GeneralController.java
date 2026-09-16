@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.github.underscore.U;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -50,7 +51,15 @@ public class GeneralController {
      * explainable content
      * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
-    public ResponseEntity<String> retrieve(@PathVariable String prefix, @PathVariable String suffix, @RequestHeader HttpHeaders header) throws Exception {
+    public ResponseEntity<String> retrieve(
+            @PathVariable
+            @Parameter(description = "The prefix of the type PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the type PID", example = "db605a11c81e79e1efc4", required = true)
+            String suffix,
+            @RequestHeader HttpHeaders header) throws Exception {
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         JsonNode type = typeService.retrieve(prefix+"/"+suffix, "general");
@@ -70,14 +79,24 @@ public class GeneralController {
     @Operation(summary = "Make an object using types as parameters human readable.",
                 description= "This supports only JSON as input as of now..")
     @CrossOrigin
+    @Hidden
     @RequestMapping(value = "/v1/decipher/{prefix}/{suffix}", method = RequestMethod.GET,  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+
     /**
      * Given a digital object where fields are described by PID's, resolve that type into human readable form by replacing PID's with 
      * explainable content
      * @param depth true if subfields of the types should be resolved as well and not just the first layer.
      */
-    public ResponseEntity<String> resolve(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
+    public ResponseEntity<String> resolve(
+        @PathVariable
+        @Parameter(description = "The prefix of the type PID", example = "21.T11969", required = true)
+        String prefix,
+
+        @PathVariable
+        @Parameter(description = "The suffix of the type PID", example = "db605a11c81e79e1efc4", required = true)
+        String suffix,
+        @RequestParam Optional<Boolean> depth) throws IOException, InterruptedException {
         logger.info(String.format("DECIPHER ", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         return new ResponseEntity<String>("Not implemented yet.", responseHeaders, HttpStatus.OK);
@@ -93,8 +112,17 @@ public class GeneralController {
         return new ResponseEntity<String>("success", responseHeaders, HttpStatus.OK);
     }
 
+    @Operation(summary = "Given the PID of a MIME Type, retrieve its name as a string.", description= "This includes only supported MIME types registered in any of the supported typeregistries.")
     @RequestMapping(value = "/v1/mime/string/{prefix}/{suffix}", method = RequestMethod.GET)
-    public ResponseEntity<String> mimeString(@PathVariable String prefix, @PathVariable String suffix) throws Exception {
+    public ResponseEntity<String> mimeString(
+        @PathVariable
+        @Parameter(description = "The prefix of the MIME Type PID", example = "21.T11969", required = true)
+        String prefix,
+
+        @PathVariable
+        @Parameter(description = "The suffix of the MIME type PID", example = "a1e844bd16b8d897f956", required = true)
+        String suffix
+    ) throws Exception {
 
         String mimeString = typeService.getMimeString(prefix + "/" + suffix);
         final HttpHeaders responseHeaders = new HttpHeaders();
@@ -105,7 +133,22 @@ public class GeneralController {
     @CrossOrigin
     @RequestMapping(value = "/v1/search", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "false") Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(
+            @RequestParam
+            @Parameter(description = "The query to search for.")
+            String query,
+
+            @RequestParam(defaultValue = "name,authors,description")
+            @Parameter(description = "The fields to search in.")
+            String[] queryBy,
+
+            @RequestParam
+            @Parameter(description = "The filters to apply to the search.", example = "{\"\": \"\"}")
+            Map<String,String> filterBy,
+
+            @RequestParam(defaultValue = "true")
+            @Parameter(description = "Whether to use infix search.")
+            Boolean infix) throws Exception {
         logger.info(String.format("Searching %s in the fields %s.", query, queryBy.toString()));
         filterBy.remove("query");
         filterBy.remove("queryBy");

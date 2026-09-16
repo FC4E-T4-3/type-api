@@ -21,6 +21,14 @@ import com.fce4.dtrtoolkit.Entities.TypeEntity;
 @Component
 public class LegacyValidator extends BaseValidator {
 
+    private ArrayList<Object> basicTypes;
+    private ArrayList<Object> compositeTypes;
+
+    public void setTypes(ArrayList<Object> basicTypes, ArrayList<Object> compositeTypes) {
+        this.basicTypes = basicTypes;
+        this.compositeTypes = compositeTypes;
+    }
+
     Logger logger = Logger.getLogger(LegacyValidator.class.getName());
 
     /**
@@ -339,17 +347,14 @@ public class LegacyValidator extends BaseValidator {
                 break;
 
 			case ONE_OF:
-				node.put("type", "object");
 				node.set("oneOf", arrayFromObject(propertyNode));
                 break;
 
 			case ALL_OF:
-				node.put("type", "object");
 				node.set("allOf", arrayFromObject(propertyNode));
                 break;
 
 			case ANY_OF:
-				node.put("type", "object");
 				node.set("anyOf", arrayFromObject(propertyNode));
                 break;
 

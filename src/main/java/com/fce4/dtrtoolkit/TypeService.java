@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fce4.dtrtoolkit.Entities.GeneralEntity;
 import com.fce4.dtrtoolkit.Entities.TypeEntity;
 import com.fce4.dtrtoolkit.Entities.UnitEntity;
 import com.fce4.dtrtoolkit.Extractors.EoscExtractor;
@@ -18,8 +19,11 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.tomlj.Toml;
 import org.tomlj.TomlParseResult;
 import org.tomlj.TomlTable;
@@ -27,7 +31,9 @@ import org.tomlj.TomlTable;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -42,8 +48,10 @@ import java.util.logging.Logger;
 @Service
 public class TypeService {
 
-    ArrayList<HashMap<String, Object>> typeList = new ArrayList<>();
-    ObjectMapper mapper = new ObjectMapper();
+    ArrayList<Object> basicTypes = new ArrayList<>();
+    ArrayList<Object> compositeTypes = new ArrayList<>();
+
+    static ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private LegacyValidator legacyValidator;
@@ -63,18 +71,20 @@ public class TypeService {
     @Autowired
     private TaxonomyGraph taxonomyGraph;
 
-    private String config="src/main/config/config.toml";
-    
+    private String config = "src/main/config/config.toml";
+
     Logger logger = Logger.getLogger(TypeService.class.getName());
 
+
     @PostConstruct
-    public void init() throws IOException, InterruptedException, Exception{
+    public void init() throws IOException, InterruptedException, Exception {
         logger.info(new File(".").getAbsolutePath());
         //refreshRepository();
     }
 
     /**
      * Refreshes the full contents of the cache, harvesting the env_file.
+     *
      * @throws InterruptedException
      * @throws IOException
      */
@@ -82,7 +92,8 @@ public class TypeService {
     public void refreshRepository() throws IOException, InterruptedException, Exception {
         try {
             logger.info("Refreshing Cache");
-            typeList.clear();
+            logger.info("Refreshing Indexer");
+            typeSearch.initTypesense();
             Date currentDate = new Date(System.currentTimeMillis());
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MMM");
             System.setProperty("timestamp", df.format(currentDate));
@@ -94,33 +105,42 @@ public class TypeService {
                     TomlTable t = TomlTable.class.cast(i.getValue());
                     String dtr = i.getKey();
                     ArrayList<Object> units = new ArrayList<Object>();
+                    ArrayList<Object> types = new ArrayList<>();
                     ArrayList<Object> taxonomy = new ArrayList<Object>();
                     ArrayList<Object> general = new ArrayList<Object>();
                     String url = t.getString("url");
                     String suffix = t.getString("suffix");
-                    List<Object> types = t.getArray("types").toList();
                     String style = t.getString("style");
 
+                    if (t.contains("basicTypes")) {
+                        types.addAll(t.getArray("basicTypes").toList());
+                        basicTypes.addAll(t.getArray("basicTypes").toList());
+                    }
+                    if (t.contains("compositeTypes")) {
+                        types.addAll(t.getArray("compositeTypes").toList());
+                        compositeTypes.addAll(t.getArray("compositeTypes").toList());
+                    }
                     if (t.contains("units")) {
-                        units = new ArrayList<Object>(t.getArray("units").toList());
+                        units.addAll(t.getArray("units").toList());
                     }
-
                     if (t.contains("taxonomy")) {
-                        taxonomy = new ArrayList<Object>(t.getArray("taxonomy").toList());
+                        taxonomy.addAll(t.getArray("taxonomy").toList());
+                    }
+                    if (t.contains("general")) {
+                        general.addAll(t.getArray("general").toList());
                     }
 
-                    if (t.contains("general")) {
-                        general = new ArrayList<Object>(t.getArray("general").toList());
-                    }
+                    legacyValidator.setTypes(basicTypes, compositeTypes);
+                    eoscValidator.setTypes(basicTypes, compositeTypes);
 
                     logger.info(String.format("extracting %s", url));
 
                     switch (style) {
                         case "legacy":
-                            legacyExtractor.extractTypes(url + suffix, types, dtr);
+                            legacyExtractor.extractTypes(url + suffix, types, url);
                             break;
                         case "eosc":
-                            eoscExtractor.extractTypes(url + suffix, types, units, taxonomy, general, dtr);
+                            eoscExtractor.extractTypes(url + suffix, types, units, taxonomy, general, url);
                             break;
                         default:
                             logger.warning(String.format("DTR with style '%s' can not be imported. Please use one of the offered options.", style));
@@ -141,20 +161,18 @@ public class TypeService {
 
     public void cacheSchemas() throws Exception {
         ArrayList<Object> allTypes = typeSearch.getAllTypes("types");
-        ArrayList<String> blacklist = new ArrayList<>();
 
-        int n = allTypes.size();
-        int counter = 1;
         for (Object i : allTypes) {
+            JsonNode obj = mapper.readTree(i.toString());
             try {
-                JsonNode obj = mapper.readTree(i.toString());
                 String style = obj.get("style").textValue();
                 if (style.equals("eosc")) {
                     String id = obj.get("id").toString().replace("\"", "");
                     cacheSchema(id);
                 }
             } catch (Exception e) {
-                logger.warning("Error caching schema: " + e.getMessage());
+                logger.warning("Error caching schema: " + obj.get("id").toString().replace("\"", "") + e.getMessage());
+                //logger.warning(i.toString());
             }
         }
     }
@@ -176,39 +194,62 @@ public class TypeService {
      */
     public void addType(String pid, String collection) throws Exception{
         logger.info(String.format("Adding Type %s to the cache", pid));
+        String dtrUrl = "";
+        HttpClient client = HttpClient.newHttpClient();;
+        HttpRequest request;
+        HttpResponse<String> response;
 
-        String uri = "http://hdl.handle.net/" + pid + "?locatt=view:json";
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .timeout(Duration.ofSeconds(60))
-            .uri(URI.create(uri))
-            .build();
-            HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
-
-        /*After the first request, we receive the URL to the type in its DTR. Since we need the full specification, the parameter "?full"
-        needs to be set to true to get all the information necessary. Thus, the second request.*/
-        
-        if(!response.headers().map().containsKey("location")){
-            logger.warning(String.format("Requested Handle %s does not exist", pid));
-            throw new IOException(String.format("Requested Handle %s does not exist.", pid));
+        //Check if the type is already in the cache. If yes, just fetch it from the DTR. Otherwise, the long way via Handle must be taken.
+        if(typeSearch.has(pid, collection)){
+            GeneralEntity type = new GeneralEntity(typeSearch.get(pid, "general"));
+            dtrUrl = type.getOrigin();
+            String uri =  dtrUrl +  "objects/" + pid + "?full=true";
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(uri))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
         }
-        String dtrUrl = response.headers().map().get("location").get(0);
-        request = HttpRequest.newBuilder()
-            .GET()
-            .timeout(Duration.ofSeconds(60))
-            .uri(URI.create(dtrUrl + "?full=true"))
-            .build();
-        response = client.send(request,HttpResponse.BodyHandlers.ofString());
+        else{
+            String uri = "http://hdl.handle.net/" + pid + "?locatt=view:json";
+
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(uri))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
+
+            /*After the first request, we receive the URL to the type in its DTR. Since we need the full specification, the parameter "?full"
+            needs to be set to true to get all the information necessary. Thus, the second request.*/
+
+            if(!response.headers().map().containsKey("location")){
+                logger.warning(String.format("Requested Handle %s does not exist", pid));
+                throw new IOException(String.format("Requested Handle %s does not exist.", pid));
+            }
+            dtrUrl = response.headers().map().get("location").get(0);
+            request = HttpRequest.newBuilder()
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .uri(URI.create(dtrUrl + "?full=true"))
+                    .build();
+            response = client.send(request,HttpResponse.BodyHandlers.ofString());
+        }
 
         JsonNode root = mapper.readTree(response.body());
+        logger.info(root.toString());
         if(dtrUrl.contains("dtr-test.pidconsortium") || dtrUrl.contains("dtr-pit.pidconsortium")){
             TypeEntity typeEntity = legacyExtractor.createEntity(root, dtrUrl);
             legacyExtractor.extractFields(typeEntity);
             typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
         }
-        else if(dtrUrl.contains("typeregistry.lab.pidconsortium")){
+        else{
+            dtrUrl = "https://" + dtrUrl.split("/")[2]+"/";
+            logger.info(dtrUrl);
+            GeneralEntity generalEntity = eoscExtractor.createGeneralEntity(root, dtrUrl);
+            typeSearch.upsertEntry(generalEntity.serializeSearch(), "general");
+
             if(root.get("type").textValue().equals("MeasurementUnit")){
                 UnitEntity unitEntity = eoscExtractor.createUnitEntity(root, dtrUrl);
                 typeSearch.upsertEntry(unitEntity.serializeSearch(), collection);
@@ -224,9 +265,6 @@ public class TypeService {
                 eoscExtractor.extractTypeFields(typeEntity);
                 typeSearch.upsertEntry(typeEntity.serializeSearch(), collection);
             }
-        }
-        else{
-            logger.warning("PID does not describe a type or is not supported by this application.");
         }
         logger.info(String.format("Adding Type %s to the cache was successful", pid));
     }
@@ -263,7 +301,7 @@ public class TypeService {
         return mapper.valueToTree(taxonomyGraph.getSubtree(pid));
     }
 
-    public ArrayList<Object> getTypesTaxonomy(String pid, Boolean getSubtree) throws Exception{        
+    public ArrayList<Object> getTypesTaxonomy(String pid, Boolean getSubtree) throws Exception{
         Map<String, String> filterBy = new HashMap<String, String>();
         if(getSubtree){
             Set<String> subtree = taxonomyGraph.getSubtreePIDs(pid);
@@ -322,18 +360,24 @@ public class TypeService {
                 addType(pid, collection);
             }
             cacheSchema(pid);
-        } else if(refresh){
-            addType(pid, collection);
-            cacheSchema(pid);
         }
-        else if(refreshChildren){
-            if(collection.equals("types")){
-                addAllChildren(pid);
+        else{
+            if(refreshChildren){
+                if(collection.equals("types")){
+                    addAllChildren(pid);
+                }
+                else{
+                    addType(pid, collection);
+                }
+                cacheSchema(pid);
+                return;
             }
-            else{
+            if(refresh){
                 addType(pid, collection);
+                if(collection.equals("types")){
+                    cacheSchema(pid);
+                }
             }
-            cacheSchema(pid);
         }
     }
 
@@ -369,21 +413,94 @@ public class TypeService {
         return typeSearch.search(query, queryBy, filterBy, collection, infix);
     }
 
+    public JsonNode resolveRefs(JsonNode schemaNode) throws IOException, InterruptedException {
+        if (schemaNode.isObject()) {
+            ObjectNode objectNode = (ObjectNode) schemaNode;
+            Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                if ("$ref".equals(entry.getKey()) && entry.getValue().isTextual()) {
+                    String refUrl = entry.getValue().asText();
+                    System.out.println("Resolving: " + refUrl);
+
+                    try {
+                        HttpClient client = HttpClient.newBuilder()
+                                .followRedirects(HttpClient.Redirect.NORMAL)
+                                .connectTimeout(Duration.ofSeconds(20))
+                                .build();
+
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(URI.create(refUrl))
+                                .GET()
+                                .build();
+
+                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                        int statusCode = response.statusCode();
+                        logger.info("Response Code: " + statusCode);
+
+                        if (statusCode == 200) {
+                            String responseBody = response.body();
+                            JsonNode refSchema = mapper.readTree(responseBody);
+
+                            if (refSchema.isEmpty()) {
+                                logger.warning("Fetched schema is empty for URL: " + refUrl);
+                            } else {
+                                // Replace $ref with actual schema content
+                                return resolveRefs(refSchema);
+                            }
+                        } else {
+                            logger.warning("Failed to fetch schema. Response code: " + statusCode);
+                        }
+                    } catch (Exception e) {
+                        logger.severe("Error fetching schema: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } else {
+                    objectNode.set(entry.getKey(), resolveRefs(entry.getValue()));
+                }
+            }
+        } else if (schemaNode.isArray()) {
+            ArrayNode arrayNode = (ArrayNode) schemaNode;
+            for (int i = 0; i < arrayNode.size(); i++) {
+                arrayNode.set(i, resolveRefs(arrayNode.get(i)));
+            }
+        }
+        return schemaNode;
+    }
+
+    /**
+     * Loads the root schema, resolves all $refs, and returns the expanded schema.
+     */
+    public JsonNode loadAndExpandSchema(String schemaUrl) throws IOException, InterruptedException {
+        System.out.println("Loading schema: " + schemaUrl);
+        JsonNode rootSchema = mapper.readTree(schemaUrl);
+        return resolveRefs(rootSchema);
+    }
+
     /**
      * Validates a JSON object against a type schema.
      * @param pid The PID of the type against which the object should be validated
      * @param object The JSON object that is to be validated
      * @throws Exception
      */
-    public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception{
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        checkAdd(pid, refresh, refreshChildren, "types");
-        JsonSchema schema = factory.getSchema(getValidation(pid,false, false).toString());
-        JsonNode node = mapper.valueToTree(object);
-        Set<ValidationMessage> errors = schema.validate(node);
-        if(errors.size()>0){
-            return errors.toString();
+    public String validate(String pid, Object object, Boolean refresh, Boolean refreshChildren) throws Exception {
+        try {
+            checkAdd(pid, refresh, refreshChildren, "types");
+            // Load schema and resolve all $ref
+            JsonNode expandedSchema = loadAndExpandSchema(getValidation(pid, refresh, refreshChildren).toString());
+
+            // Convert JSON object to JsonNode
+            JsonNode node = mapper.valueToTree(object);
+
+            // Validate using JSON Schema Validator
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            JsonSchema schema = factory.getSchema(expandedSchema.toString());
+            Set<ValidationMessage> errors = schema.validate(node);
+            return errors.isEmpty() ? "Valid" : errors.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
         }
-        return "Valid";
     }
 }

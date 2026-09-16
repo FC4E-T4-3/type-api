@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -66,7 +67,22 @@ public class UnitController {
     @CrossOrigin
     @RequestMapping(value = "/v1/units/search", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> search(@RequestParam String query, @RequestParam(defaultValue = "name,authors,description") String[] queryBy, @RequestParam(defaultValue="{\"\":\"\"}") Map<String,String> filterBy, @RequestParam(defaultValue = "true", required = true) Boolean infix) throws Exception {
+    public ResponseEntity<Object> search(
+            @RequestParam
+            @Parameter(description = "The query to search for.")
+            String query,
+
+            @RequestParam(defaultValue = "name,authors,description")
+            @Parameter(description = "The fields to search in.")
+            String[] queryBy,
+
+            @RequestParam
+            @Parameter(description = "The filters to apply to the search.", example = "{\"\": \"\"}")
+            Map<String,String> filterBy,
+
+            @RequestParam(defaultValue = "true")
+            @Parameter(description = "Whether to use infix search.")
+            Boolean infix) throws Exception {
         logger.info("Searching for...");
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -86,7 +102,18 @@ public class UnitController {
     @CrossOrigin
     @RequestMapping(value = "/v1/units/{prefix}/{suffix}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}) 
     @ResponseBody
-    public ResponseEntity<String> getUnit(@PathVariable String prefix, @PathVariable String suffix, @RequestParam Optional<Boolean> refresh, @RequestHeader HttpHeaders header) throws Exception{
+    public ResponseEntity<String> getUnit(
+            @PathVariable
+            @Parameter(description = "The prefix of the Measurement Unit PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Measurement Unit PID", example = "9be4ec7c88f130ac2598", required = true)
+            String suffix,
+
+            @Parameter(description = "Whether to refresh the Measurement Unit to include changes recently made in the DTR, recaching it.")
+            @RequestParam Optional<Boolean> refresh,
+            @RequestHeader HttpHeaders header) throws Exception{
         logger.info(String.format("Getting Unit Description for %s.", prefix+"/"+suffix));
         final HttpHeaders responseHeaders = new HttpHeaders();
         JsonNode unit = JsonNodeFactory.instance.objectNode(); 
@@ -106,11 +133,19 @@ public class UnitController {
         return new ResponseEntity<String>(unit.toString(), responseHeaders, HttpStatus.OK);
     }
 
-    @Operation(summary = "Retrieve all other datatypes that are associated with the given measurement unit.")
+    @Operation(summary = "Retrieve all other datatypes that are associated with the given measurement unit.",
+            description = "Retrieve all types describing schema elements that are represented by the given measurement unit.")
     @CrossOrigin
     @RequestMapping(value = "/v1/units/{prefix}/{suffix}/types", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<Object> getUnitTypes(@PathVariable String prefix, @PathVariable String suffix) throws Exception{
+    public ResponseEntity<Object> getUnitTypes(
+            @PathVariable
+            @Parameter(description = "The prefix of the Measurement Unit PID", example = "21.T11969", required = true)
+            String prefix,
+
+            @PathVariable
+            @Parameter(description = "The suffix of the Measurement Unit PID", example = "9be4ec7c88f130ac2598", required = true)
+            String suffix) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         
         JsonNode unit = JsonNodeFactory.instance.objectNode();         

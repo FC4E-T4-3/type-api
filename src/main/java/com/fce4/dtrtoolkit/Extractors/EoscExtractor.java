@@ -38,19 +38,19 @@ public class EoscExtractor implements BaseExtractor {
 
     @Autowired
     private TaxonomyGraph taxonomyGraph;
-    
-    public void extractTypes(String url, List<Object> types, ArrayList<Object> units, ArrayList<Object> taxonomy, ArrayList<Object> general, String dtr) throws Exception{
+
+    public void extractTypes(String url, List<Object> types, ArrayList<Object> units, ArrayList<Object> taxonomy, ArrayList<Object> general, String origin) throws Exception{
         int typeCounter = 0;
         int unitCounter = 0;
         int taxonomyCounter = 0;
         int generalCounter = 0;
 
         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .timeout(Duration.ofSeconds(20))
-            .uri(URI.create(url))
-            .build();
-            HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
+                .GET()
+                .timeout(Duration.ofSeconds(20))
+                .uri(URI.create(url))
+                .build();
+        HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode actualObj = mapper.readTree(response.body());
@@ -60,32 +60,32 @@ public class EoscExtractor implements BaseExtractor {
                 continue;
             }
             if(types.contains(jsonNode.get("type").textValue())){
-                TypeEntity typeEntity = createTypeEntity(jsonNode, dtr);
+                TypeEntity typeEntity = createTypeEntity(jsonNode, origin);
                 extractTypeFields(typeEntity);
                 typeList.add(typeEntity.serializeSearch());
-                GeneralEntity generalEntity = createGeneralEntity(jsonNode, dtr);
+                GeneralEntity generalEntity = createGeneralEntity(jsonNode, origin);
                 generalList.add(generalEntity.serializeSearch());
                 generalCounter +=1;
                 typeCounter+=1;
             }
             if(units.contains(jsonNode.get("type").textValue())){
-                UnitEntity unitEntity = createUnitEntity(jsonNode, dtr);
+                UnitEntity unitEntity = createUnitEntity(jsonNode, origin);
                 unitList.add(unitEntity.serializeSearch());
-                GeneralEntity generalEntity = createGeneralEntity(jsonNode, dtr);
+                GeneralEntity generalEntity = createGeneralEntity(jsonNode, origin);
                 generalList.add(generalEntity.serializeSearch());
                 generalCounter +=1;
                 unitCounter+=1;
             }
             if(taxonomy.contains(jsonNode.get("type").textValue())){
-                TaxonomyEntity taxonomyEntity = createTaxonomyEntity(jsonNode, dtr);
+                TaxonomyEntity taxonomyEntity = createTaxonomyEntity(jsonNode, origin);
                 taxonomyGraph.addNode(taxonomyEntity);
-                GeneralEntity generalEntity = createGeneralEntity(jsonNode, dtr);
+                GeneralEntity generalEntity = createGeneralEntity(jsonNode, origin);
                 generalList.add(generalEntity.serializeSearch());
                 generalCounter +=1;
                 taxonomyCounter+=1;
             }
             if(general.contains(jsonNode.get("type").textValue())){
-                GeneralEntity generalEntity = createGeneralEntity(jsonNode, dtr);
+                GeneralEntity generalEntity = createGeneralEntity(jsonNode, origin);
                 generalList.add(generalEntity.serializeSearch());
                 generalCounter +=1;
             }
@@ -94,34 +94,32 @@ public class EoscExtractor implements BaseExtractor {
         taxonomyGraph.generateRelations();
         for(TaxonomyEntity t : taxonomyGraph.getTaxonomy().values()){
             taxonomyList.add(t.serializeSearch());
-        }    
-        
+        }
+
         typeSearch.upsertList(typeList, "types");
         typeSearch.upsertList(unitList, "units");
         typeSearch.upsertList(taxonomyList, "taxonomy");
         typeSearch.upsertList(generalList, "general");
 
-        logger.info(String.format("Added %s types from DTR '%s'.", typeCounter, dtr));
-        logger.info(String.format("Added %s units from DTR '%s'.", unitCounter, dtr));
-        logger.info(String.format("Added %s taxonomy nodes from DTR '%s'.", taxonomyCounter, dtr));
-        logger.info(String.format("Added %s general entities from DTR '%s'.", generalCounter, dtr));
+        logger.info(String.format("Added %s types from DTR '%s'.", typeCounter, origin));
+        logger.info(String.format("Added %s units from DTR '%s'.", unitCounter, origin));
+        logger.info(String.format("Added %s taxonomy nodes from DTR '%s'.", taxonomyCounter, origin));
+        logger.info(String.format("Added %s general entities from DTR '%s'.", generalCounter, origin));
     }
 
-    public TypeEntity createTypeEntity(JsonNode node, String dtr) {
+    public TypeEntity createTypeEntity(JsonNode node, String origin) {
         String pid = node.get("id").textValue();
         String prefix = pid.split("/")[0];
         String type = node.get("type").textValue();
         JsonNode content = node.get("content");
         String style = "eosc";
         String name = node.get("content").get("name").textValue();
-        String origin = dtr;
         return new TypeEntity(pid, prefix, type, content, style, origin, name);
     }
 
-    public GeneralEntity createGeneralEntity(JsonNode node, String dtr) {
+    public GeneralEntity createGeneralEntity(JsonNode node, String origin) {
         String pid = node.get("id").textValue();
         String type = node.get("type").textValue();
-        String origin = dtr;
         long timestamp = 0;
         ArrayList<String> authors = new ArrayList<String>();
         ArrayList<String> aliases = new ArrayList<String>();
@@ -167,10 +165,9 @@ public class EoscExtractor implements BaseExtractor {
         return new GeneralEntity(pid, type, origin, name, timestamp, desc, authors, aliases, taxonomies, node);
     }
 
-    public UnitEntity createUnitEntity(JsonNode node, String dtr) {
+    public UnitEntity createUnitEntity(JsonNode node, String origin) {
         String pid = node.get("id").textValue();
         String type = node.get("type").textValue();
-        String origin = dtr;
 
         long timestamp = 0;
         ArrayList<String> authors = new ArrayList<String>();
@@ -225,10 +222,9 @@ public class EoscExtractor implements BaseExtractor {
         return new UnitEntity(pid, type, origin, name, timestamp, desc, authors, derivation, unitSymbol, quantity, quantitySymbol);
     }
 
-    public TaxonomyEntity createTaxonomyEntity(JsonNode node, String dtr){
+    public TaxonomyEntity createTaxonomyEntity(JsonNode node, String origin){
         String pid = node.get("id").textValue();
         String type = node.get("type").textValue();
-        String origin = dtr;
         long timestamp = 0;
         ArrayList<String> authors = new ArrayList<String>();
         String desc = ""; 
