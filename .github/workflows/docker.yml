@@ -36,7 +36,9 @@ jobs:
           tags: |
             type=ref,event=branch
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,enable=false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push Docker image
         id: push
@@ -46,6 +48,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Generate artifact attestation
         uses: actions/attest@v4
