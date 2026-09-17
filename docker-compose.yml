@@ -1,4 +1,4 @@
-version: '3.4'
+name: "type-api-service"
 services:
   typesense:
     image: typesense/typesense:30.0.rc2
@@ -15,6 +15,7 @@ services:
         max-file: "10"
   typeapi:
     image: ghcr.io/fc4e-t4-3/dtr-toolkit:latest
+    container_name: type-api
     restart: on-failure
     ports: 
       - "8080:8080"
