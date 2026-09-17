@@ -1,6 +1,6 @@
 # TypeAPI
 
-![Java](https://img.shields.io/badge/Java-11+-blue.svg) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.6.3-brightgreen.svg) ![Type Sense](https://img.shields.io/badge/TypeSense-25.1-red.svg)
+![Java](https://img.shields.io/badge/Java-11+-blue.svg) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.6.3-brightgreen.svg) ![TypeSense](https://img.shields.io/badge/TypeSense-30.0.rc2-red.svg)
 
 
 ## Table of Contents
@@ -27,7 +27,7 @@ The **DTR Toolkit** is a framework designed to work with Data Type Registries (D
 ### Prerequisites
 - Java 11 or higher
 - Gradle 6.8 or higher
-- A TypeSense 25.1 instance or higher
+- A TypeSense 30.0.rc2 instance or higher
 
 ### Steps
 1. Clone the repository:
@@ -55,7 +55,7 @@ typesense.key=xyz
 
 3. Build and run the project:
 ```
-./gradlew buildRun
+./gradlew build
 ```
 
 ### Via Docker Compose

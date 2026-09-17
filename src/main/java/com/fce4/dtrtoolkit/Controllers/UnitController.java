@@ -148,8 +148,8 @@ public class UnitController {
             String suffix) throws Exception{
         logger.info(String.format("Getting Type Description for %s.", prefix+"/"+suffix));
         
-        JsonNode unit = JsonNodeFactory.instance.objectNode();         
-        unit = typeService.getUnit(prefix+"/"+suffix, false);
+        //JsonNode unit = JsonNodeFactory.instance.objectNode();         
+        //unit = typeService.getUnit(prefix+"/"+suffix, false);
 
         final HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);

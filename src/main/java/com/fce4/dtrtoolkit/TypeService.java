@@ -168,10 +168,16 @@ public class TypeService {
                 String style = obj.get("style").textValue();
                 if (style.equals("eosc")) {
                     String id = obj.get("id").toString().replace("\"", "");
-                    cacheSchema(id);
+                    String decodedId = java.net.URLDecoder.decode(id, java.nio.charset.StandardCharsets.UTF_8);
+                    if (typeSearch.has(decodedId, "types")) {
+                        cacheSchema(decodedId);
+                    } else {
+                        logger.warning("Skipping schema cache for " + decodedId + " - not found in TypeSense");
+                    }
                 }
             } catch (Exception e) {
-                logger.warning("Error caching schema: " + obj.get("id").toString().replace("\"", "") + e.getMessage());
+                logger.warning("Error caching schema: " + obj.get("id").toString().replace("\"", "") + " - " + e.getMessage());
+                e.printStackTrace();
                 //logger.warning(i.toString());
             }
         }
@@ -386,6 +392,15 @@ public class TypeService {
      * @param pid the PID to add/refresh in the cache.
      */
     public void addAllChildren(String pid) throws Exception{
+        addAllChildren(pid, new HashSet<>());
+    }
+
+    private void addAllChildren(String pid, Set<String> visited) throws Exception{
+        if(visited.contains(pid)){
+            return;
+        }
+        visited.add(pid);
+        
         addType(pid, "types");
         Map<String, Object> type = typeSearch.get(pid, "types");
         ObjectNode node = mapper.valueToTree(type.get("content"));
@@ -394,7 +409,7 @@ public class TypeService {
                 ArrayNode properties = mapper.valueToTree(node.get("Schema").get("Properties"));
                 for(JsonNode i : properties){
                     if(i.has("Type")){
-                        addAllChildren(i.get("Type").textValue());
+                        addAllChildren(i.get("Type").textValue(), visited);
                     }
                 }
             }

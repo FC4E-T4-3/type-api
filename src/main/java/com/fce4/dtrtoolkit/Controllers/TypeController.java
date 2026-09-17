@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,12 +28,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.logging.Logger;
 
 import com.fce4.dtrtoolkit.TypeService;
-import org.springframework.web.client.RestTemplate;
 
 @RestController
 @Tag(name = "Types", description = "Endpoints related to BasicInfoTypes, InfoTypes and Profiles, describing schema elements. " +
@@ -118,6 +115,8 @@ public class TypeController {
         //Neccessary to clean the JSON string, since Java escapes already escaped characters.
         //String cleaned = node.toString().replace("\\\\n","\\n").replace("\\\\\\\\", "\\\\").replace("\\\\", "\\");
         //logger.info(cleaned);
+        //logger.info(node.toString());
+        //logger.info("------------------");
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<String>(node.toString(), responseHeaders, HttpStatus.OK);
     }

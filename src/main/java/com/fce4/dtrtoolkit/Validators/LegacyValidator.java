@@ -20,10 +20,10 @@ import com.fce4.dtrtoolkit.Entities.TypeEntity;
  */
 @Component
 public class LegacyValidator extends BaseValidator {
-
+    
     private ArrayList<Object> basicTypes;
     private ArrayList<Object> compositeTypes;
-
+    
     public void setTypes(ArrayList<Object> basicTypes, ArrayList<Object> compositeTypes) {
         this.basicTypes = basicTypes;
         this.compositeTypes = compositeTypes;

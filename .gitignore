@@ -6,6 +6,8 @@ build/
 !**/src/test/**/build/
 /typesense-data
 
+org/
+
 ### STS ###
 .apt_generated
 .classpath
